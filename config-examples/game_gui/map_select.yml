@@ -1,0 +1,96 @@
+﻿# ──────────────────────────────────────────────────────────────────────────────
+# 大厅 GUI：地图选择
+# 玩家进入大厅后打开的第一个界面
+# 点击地图进入模式选择
+# ──────────────────────────────────────────────────────────────────────────────
+
+title: "&8┃ &6选择战场 &8┃"
+layout:
+  page1:
+    - "aaaaaaaaa"
+    - "a0102030a"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "←aaaXaaa→"
+  page2:
+    - "aaaaaaaaa"
+    - "a0102030a"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "←aaaXaaa→"
+
+
+base:
+  # ─── 装饰边框 ───
+  a:
+    material: black_stained_glass_pane
+    display_name: " "
+    lore: []
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click: []
+
+  # ─── 关闭按钮 ───
+  X:
+    material: barrier
+    display_name: "&c关闭"
+    lore:
+      - "&7点击关闭界面"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "close"
+
+  ←:
+    material: book
+    display_name: "&c上一页"
+    lore:
+      - "&7点击翻页"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "previous_page"
+
+  →:
+    material: book
+    display_name: "&c下一页"
+    lore:
+      - "&7点击翻页"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "next_page"
+
+
+# ─── 地图物品模板（代码动态填充） ───
+# 以下为占位配置，代码根据 maps/ 文件夹动态生成物品
+# 点击地图后执行 open: @lobby_mode_<map_id>
+# slot 位置由代码根据当前页动态分配（中间 3x7 区域）
+maps:
+  1:
+    material: BOOK
+    display_name: 莲花栈桥
+    map: 莲花栈桥 #此页面用的地图
+    lore:
+      - ""
+      - " &7模式: &f{mode}"
+      - " &7人数: &a{current}&7/&e{max}"
+      - ""
+      - "&e点击选择此地图"
+    click:
+      - "sound: ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+      - "open" #打开地图选择

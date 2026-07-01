@@ -1,0 +1,9 @@
+﻿waiting:
+  matching:
+    title: "等待中..."
+    subtitle: "请耐心等待，正在为您匹配旗鼓相当的对手"
+  matched:
+    title: "匹配成功"
+    subtitle: "即将进入对局"
+  transition_delay: 3 #匹配成功后进入地图的等待时间
+    

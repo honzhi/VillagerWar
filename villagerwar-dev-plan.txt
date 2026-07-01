@@ -1,0 +1,1069 @@
+﻿VillagerWar 开发方案（第二版，整合评审意见）
+
+二、包结构
+-----------
+com.yourname.villagerwar
+│
+├── VillagerWar.java                    # 主类，继承 JavaPlugin
+├── GameManager.java                   # 全局游戏实例管理器（必须）
+├── Game.java                           # 一局游戏实例
+├── GamePlayer.java                     # 玩家封装（只存 UUID）
+├── GameState.java                      # 状态枚举
+│
+├── controller
+│   └── GameController.java             # 状态机驱动核心（含 start/destroy）
+│
+├── manager
+│   ├── TeamManager.java                # 队伍管理 + 玩家分配
+│   ├── SkillManager.java               # 技能选择 + 释放（只认识 GameSkill）
+│   ├── SpawnManager.java               # 兵线生成
+│   ├── EconomyManager.java             # 金币 + 商店
+│   ├── RespawnManager.java             # 死亡 + 复活
+│   ├── VictoryManager.java             # 胜负判断
+│   └── UIManager.java                  # UI 统一入口，代理各子模块
+│
+├── ui
+│   ├── ScoreboardManager.java          # 计分板
+│   ├── BossBarManager.java             # BossBar
+│   ├── TitleManager.java               # Title / ActionBar
+│   └── MessageManager.java             # Chat 消息
+│
+├── world
+│   ├── WorldManager.java               # 全局地图管理器
+│   └── GameWorld.java                  # 单局地图封装（模板复制/加载/卸载）
+│
+├── bridge
+│   └── MMBridge.java                   # MythicMobs 统一调用层（GameSkill ↔ Mythic）
+│
+├── skill
+│   └── GameSkill.java                  # 游戏内技能抽象（不依赖 MythicMobs）
+│
+├── listener
+│   ├── PlayerJoinListener.java
+│   ├── PlayerQuitListener.java
+│   ├── PlayerDeathListener.java
+│   ├── PlayerInteractListener.java
+│   └── PlayerMoveListener.java
+│
+├── command
+│   ├── VillagerWarCommand.java          # /vw 主命令
+│   └── arguments
+│       ├── CreateArgument.java
+│       ├── JoinArgument.java
+│       ├── LeaveArgument.java
+│       ├── StartArgument.java
+│       ├── ListArgument.java
+│       └── SetMapArgument.java
+│
+├── config
+│   ├── ConfigManager.java               # 全局配置
+│   ├── MapConfig.java                   # 地图配置
+│   └── GameConfig.java                  # 游戏参数配置
+│
+├── shop
+│   ├── ShopItem.java
+│   └── ShopGUI.java
+│
+└── util
+    └── MessageUtil.java                 # 消息格式化
+
+三、核心类详细设计
+-------------------
+
+3.1 GameState 枚举
+
+public enum GameState {
+    WAITING,       // 等待玩家加入
+    PREPARING,     // 初始化游戏（地图/队伍）
+    SKILL_SELECT,  // 技能选择阶段
+    SKILL_SHOW,    // 展示双方技能
+    TELEPORT,      // 传送至战场
+    READY,         // 3秒准备倒计时
+    PLAYING,       // 正式游戏进行中
+    ENDING,        // 游戏结束动画
+    REWARD,        // 奖励结算
+    RETURNING      // 返回大厅
+}
+
+3.2 GameManager — 全局游戏实例管理器（必须）
+
+整个插件中不允许使用 static currentGame。
+所有游戏实例查询都必须通过 GameManager。
+
+public class GameManager {
+    private final Map<UUID, Game> games = new HashMap<>();
+    private final Map<UUID, UUID> playerGameMap = new HashMap<>();  // PlayerUUID → GameUUID
+
+    public Game createGame(String name, ...);
+    public void removeGame(UUID gameId);
+    public Optional<Game> getGame(UUID gameId);
+    public Optional<Game> getGame(Player player);
+    public Optional<Game> getGame(UUID playerUuid);
+    public Collection<Game> getGames();
+}
+
+3.3 Game — 一局游戏的实例（Root Object）
+
+public class Game {
+    private final UUID gameId;
+    private final String gameName;
+    private GameState state;
+    private final GameWorld gameWorld;      // 战场地图（通过 GameWorld 管理）
+    private int gameTime;                   // 游戏已运行 Tick 数（统一 Tick 用）
+
+    private final TeamManager teamManager;
+    private final SkillManager skillManager;
+    private final SpawnManager spawnManager;
+    private final EconomyManager economyManager;
+    private final RespawnManager respawnManager;
+    private final VictoryManager victoryManager;
+    private final UIManager uiManager;
+    // TimerManager 已移除——改为统一 Tick 调度
+
+    private final List<GamePlayer> players;
+    private final GameController controller;
+
+    // GameState 变更的唯一入口
+    public void setState(GameState newState) {
+        this.state = newState;
+        controller.onStateChange(newState);
+    }
+
+    // 统一 Tick（每服务器 Tick 调用一次）
+    public void tick() {
+        if (state != GameState.PLAYING) return;
+        gameTime++;
+        spawnManager.tick(gameTime);
+        economyManager.tick(gameTime);
+        respawnManager.tick(gameTime);
+        victoryManager.tick(gameTime);
+        uiManager.tick(gameTime);
+    }
+}
+
+关键约束：
+  - setState() 是唯一修改 state 的方法
+  - 状态变更后由 GameController.onStateChange() 统一调度
+  - 每个 Manager 通过 game.getState() 判断是否执行逻辑
+  - Game 不直接负责世界生命周期，委托给 GameWorld
+
+3.4 GameController — 唯一流程控制者
+
+public class GameController {
+    private final Game game;
+    private boolean ticking;                // Tick 运行标志
+    private BukkitTask tickTask;            // 主 Tick 任务
+
+    // 启动游戏（由 GameManager.createGame 后调用）
+    public void start() {
+        ticking = true;
+        tickTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!ticking) return;
+            game.tick();
+        }, 0L, 1L);
+    }
+
+    // 销毁游戏（完整生命周期清理）
+    public void destroy() {
+        ticking = false;
+        if (tickTask != null) tickTask.cancel();
+        game.getGameWorld().unload();
+        game.getUIManager().clearAll();
+        // 注销监听、清除 BossBar、清除实体、卸载地图、清空缓存
+        // 由 GameManager 调用 removeGame
+    }
+
+    public void onStateChange(GameState newState) {
+        switch (newState) {
+            case WAITING:       // 注册大厅监听，等待玩家加入
+            case PREPARING:     // 初始化地图、队伍分配
+            case SKILL_SELECT:  // 开启技能选择 GUI
+            case SKILL_SHOW:    // 展示双方技能
+            case TELEPORT:      // 传送玩家到战场
+            case READY:         // 开始 3s 倒计时
+            case PLAYING:       // 游戏进行中（Tick 已在 start() 中启动）
+            case ENDING:        // 结束动画
+            case REWARD:        // 发放奖励
+            case RETURNING:     // 传送回大厅
+        }
+    }
+
+    // 推进到下一个状态（仅 GameController 可调用）
+    public void transitionTo(GameState nextState);
+}
+
+四、GamePlayer 设计
+
+GamePlayer 只保存 UUID，不持有 Player 实例。
+
+public class GamePlayer {
+    private final UUID uuid;
+    private Team team;
+    private GameSkill skill;
+    private int gold;
+    private int kills;
+    private int deaths;
+
+    public Player getPlayer() {
+        return Bukkit.getPlayer(uuid);
+    }
+
+    public UUID getUuid() { return uuid; }
+}
+
+断线重连无需更新引用，Bukkit.getPlayer(uuid) 实时获取。
+
+五、GameWorld 设计（抽离地图管理）
+
+Game 只持有 GameWorld，不直接管理 World。
+
+public class GameWorld {
+    private final String templateName;       // 模板地图名
+    private World world;                     // 运行时地图实例
+
+    public void load();                      // 复制模板 → 创建 World
+    public void preloadChunks();             // Chunk 预加载（后续）
+    public void unload();                    // 卸载 World
+    public void delete();                    // 删除地图文件
+}
+
+public class WorldManager {
+    public GameWorld createGameWorld(String templateName);
+    public void deleteGameWorld(GameWorld gameWorld);
+}
+
+六、GameSkill 设计（不依赖 MythicMobs）
+
+SkillManager 只认识 GameSkill，不直接写 Mythic 技能名称。
+
+public class GameSkill {
+    private final String id;                 // 技能 ID
+    private final String displayName;        // 显示名称
+    private final int cooldown;              // 冷却（Tick）
+    private final String mythicSkillName;    // MythicMobs 技能名称（桥接用）
+    private final Material icon;             // GUI 图标
+}
+
+MMBridge 负责转换：GameSkill → MythicMobs Skill 名称 → 释放。
+
+七、完整状态转换时序
+--------------------
+
+WAITING ──(玩家>=4)──> PREPARING ──> SKILL_SELECT
+    ↑                                                │
+    │                                           (倒计时结束)
+    │                                                │
+    │                                                v
+    │                                          SKILL_SHOW
+    │                                                │
+    │                                           (倒计时结束)
+    │                                                │
+    │                                                v
+    │                                           TELEPORT
+    │                                                │
+    │                                            (传送完成)
+    │                                                │
+    │                                                v
+    │                                             READY
+    │                                                │
+    │                                            (3秒结束)
+    │                                                │
+    │                                                v
+    │                                            PLAYING
+    │                                                │
+    │                              ┌──────────────────┼──────────────┐
+    │                              │                  │              │
+    │                    (tick%40)兵线生成   (tick%20)金币发放  胜利检测
+    │                              │                  │              │
+    │                                                │
+    │                                           (胜利/平局)
+    │                                                │
+    │                                                v
+    │                                            ENDING
+    │                                                │
+    │                                           (动画结束)
+    │                                                │
+    │                                                v
+    │                                            REWARD
+    │                                                │
+    │                                           (结算完成)
+    │                                                │
+    │                                                v
+    │                                          RETURNING
+    │                                                │
+    └──────────────── (回到大厅) ────────────────────┘
+
+八、统一 Tick 调度说明
+-----------------------
+
+不再使用 TimerManager 或各 Manager 各自创建 BukkitRunnable。
+整个 Game 只维护一个主 Tick，game.tick() 每 Tick 调用各 Manager 的 tick(int gameTime)。
+
+各 Manager 通过 gameTime 判断执行频率：
+
+    spawnManager.tick(gameTime)     →  if(gameTime % 40 == 0) spawnWave();
+    economyManager.tick(gameTime)   →  if(gameTime % 20 == 0) giveGold();
+    respawnManager.tick(gameTime)   →  检查复活队列
+    victoryManager.tick(gameTime)   →  检查胜负条件
+    uiManager.tick(gameTime)        →  更新 ActionBar / Scoreboard
+
+优点：
+  - Scheduler 数量极少，整个 Game 只有一个 BukkitRunnable
+  - 生命周期统一，start() 启动 Tick，destroy() 停止
+  - 调试方便，gameTime 可冻结/回放
+  - 性能更稳定，避免大量 Runnable 调度开销
+
+九、UI 分层设计（UIManager 拆分）
+-----------------------------------
+
+UIManager 作为统一入口，内部委托给各子模块：
+
+public class UIManager {
+    private final ScoreboardManager scoreboardManager;
+    private final BossBarManager bossBarManager;
+    private final TitleManager titleManager;
+    private final MessageManager messageManager;
+
+    public void tick(int gameTime);
+    public void clearAll();                     // destroy 时调用
+
+    // 统一代理方法
+    public void showTitle(Player p, String title, String subtitle);
+    public void updateScoreboard();
+    public void sendMessage(Player p, String msg);
+    public void setBossBar(double progress, String text);
+}
+
+十、Manager 职责与 GameState 对应关系
+---------------------------------------
+
+| Manager            | 生效的 GameState                        | 核心 tick 逻辑                |
+|--------------------|----------------------------------------|-------------------------------|
+| TeamManager        | WAITING → PREPARING                      | 分配队伍 / skill = null       |
+| SkillManager       | SKILL_SELECT / SKILL_SHOW                | GUI 选择 / 展示技能           |
+| SpawnManager       | PLAYING                                  | if (gameTime % 40 == 0) 出兵  |
+| EconomyManager     | PLAYING                                  | if (gameTime % 20 == 0) 加金币|
+| RespawnManager     | PLAYING                                  | 检查复活队列倒计时             |
+| VictoryManager     | PLAYING / ENDING                         | 检查胜负条件                   |
+| UIManager          | 所有状态                                  | 不同状态显示不同UI             |
+
+十一、实现阶段划分（修订版）
+---------------------------
+
+Phase 1 — 项目骨架（预计1天）
+  1. Gradle 项目脚手架，Paper API 依赖
+  2. GameManager — 全局游戏实例管理器
+  3. GameState 枚举
+  4. Game 类骨架（含 tick() 方法声明）
+  5. GamePlayer（只存 UUID）
+  6. GameController（含 start()/destroy() 骨架）
+  7. GameWorld + WorldManager
+  8. /vw create, /vw join, /vw list 基本命令
+  9. 全局 Config 加载
+
+Phase 2 — Manager 与 UI 实现
+  1. TeamManager — 自动分配队伍
+  2. UIManager + ScoreboardManager + BossBarManager + TitleManager + MessageManager
+  3. EconomyManager — 金币系统
+  4. GameSkill + SkillManager — 技能选择 GUI
+  5. MMBridge — MythicMobs 桥接层
+
+Phase 3 — 核心游戏逻辑 + 统一 Tick
+  1. SpawnManager — 兵线生成（tick 驱动）
+  2. RespawnManager — 死亡 + 复活（tick 驱动）
+  3. VictoryManager — 胜利/平局判定（tick 驱动）
+  4. GameController 完整状态转换链路 + game.tick() 完整实现
+  5. 完整的大厅 → 选技能 → 战斗 → 结算 → 返回流程
+
+Phase 4 — 完善与打磨
+  1. 商店系统（ShopGUI）
+  2. 游戏内消息与提示优化
+  3. 配置系统完善（地图坐标、经济参数等）
+  4. 异常处理与防崩溃
+  5. 数据统计记录（YAML/SQLite）
+
+Phase 5 — 测试与部署
+  1. 单机多开测试
+  2. 边界情况处理（掉线/重连）
+  3. /vw leave, /vw start 命令完善
+  4. 权限系统
+
+十二、设计决策备注
+-------------------
+
+1. GamePlayer 只存 UUID：不持有 Player 实例，断线重连无需更新引用，
+   通过 Bukkit.getPlayer(uuid) 实时获取。
+
+2. TimerManager 已移除：改为统一 Tick 调度，整个 Game 只有一个
+   BukkitRunnable。
+
+3. World 管理：由 GameWorld（模板复制 → World 创建 → Chunk 预加载 →
+   unload → 删除）统一负责，Game 不直接接触 World。
+
+4. 状态转换守卫：Game.setState() 内部检查转换合法性（如 WAITING 不能直接
+   跳到 PLAYING），非法转换静默忽略 + warning 日志。
+
+5. 并发策略：第一阶段不加入任何锁。Paper 事件均运行于主线程，数据直接修改。
+   仅数据库/网络请求等异步逻辑再考虑线程安全。
+
+6. 生命周期完整：GameController.start() 启动 Tick，destroy() 统一清理
+   （停止 Tick、注销监听、清除 BossBar/实体、卸载地图、清空缓存、删除 Game）。
+
+十三、架构开发原则（必须遵守）
+-------------------------------
+
+以后新增任何功能，都必须先回答三个问题：
+
+### 1. 属于哪个 GameState？
+
+例如：
+- 特殊事件 → PLAYING
+- 技能选择 → SKILL_SELECT
+- 结算 → REWARD
+
+### 2. 属于哪个 Manager？
+
+例如：
+- 金币 → EconomyManager
+- 兵线 → SpawnManager
+- 技能 → SkillManager
+- UI → UIManager
+
+不得出现一个功能横跨多个 Manager。
+
+### 3. 是否需要修改 GameController？
+
+只有影响游戏流程的功能，才允许修改 GameController。
+普通业务功能不允许修改状态机流程。
+
+十四、总体架构原则
+-------------------
+
+整个项目必须遵循以下层级结构：
+
+    VillagerWar (主类)
+          │
+          ▼
+    GameManager (全局)
+          │
+          ▼
+     Game (单局根对象)
+          │
+          ▼
+    GameController (状态驱动)
+          │
+          ▼
+    各 Manager (职责单一)
+          │
+          ▼
+    MythicMobs Bridge (技能/怪物)
+
+约束：
+- Game 是一局游戏的根对象（Root Object）。
+- GameController 是唯一状态切换者。
+- 所有 Manager 都依附于 Game。
+- 所有逻辑执行前必须判断当前 GameState。
+- Manager 之间禁止直接推进游戏流程。
+- MythicMobs 只负责技能、怪物和 Buff，不参与游戏规则。
+- 最终目标是构建一个支持多个 Game 实例、可扩展、易维护的小游戏框架。
+
+十五、配置文件设计方案
+=======================
+
+=======================
+
+配置文件清单
+-------------
+
+  文件名              Phase    说明
+  ─────────────────  ───────  ─────────────────────────────────
+  config.yml          P1      全局插件配置
+  map_defaults.yml    P1      地图配置模版（单张）
+  skills.yml          P2      技能定义
+  messages.yml        P2      可配置消息文本
+  game_modes.yml      P2      游戏模式预设（标准/极速等）
+  shop/<name>.yml     P3      商店模版（地图中 shops 字段引用）
+  game_status/*.yml   P3      各游戏状态 UI 配置
+  game_gui/*.yml      P3      大厅 GUI 配置（地图选择/模式选择）
+
+15.1 config.yml — 全局插件配置（Phase 1）
+-------------------------------------------
+
+# ─────────────────────────────────────────────
+# VillagerWar 全局配置文件
+# 修改后需重启服务器生效
+# ─────────────────────────────────────────────
+
+# ─── 数据库设置 ───
+# 存储玩家数据、战绩统计等持久化信息
+database:
+  # 数据库类型：sqlite | mysql
+  # sqlite：文件存储，无需额外配置，适合小型服务器
+  # mysql：需要单独安装 MySQL 服务，适合大型跨服务器部署
+  type: sqlite
+
+  # ─── MySQL 连接参数（仅在 type: mysql 时启用） ───
+  # host: localhost              # 数据库服务器地址
+  # port: 3306                   # 端口，默认 3306
+  # database: villagerwar        # 数据库名，需提前创建
+  # user: root                   # 用户名
+  # password: ""                 # 密码，留空表示无密码
+
+# ─── 游戏结束后传送设置 ───
+# true:  游戏结束后将玩家传送到下方指定的位置
+# false: 游戏结束后将玩家传送回加入游戏前的位置
+post_game:
+  # 是否启用固定传送点
+  teleport_enabled: true
+  # 固定传送点坐标（仅 teleport_enabled: true 时生效）
+  teleport_to:
+    world: lobby
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+lobby:
+  # 大厅世界名称，玩家加入服务器后所在的等待世界
+  world: lobby
+  # 大厅出生点坐标，玩家传送回大厅时的位置
+  spawn:
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0          # 水平旋转角度（0=南，90=西，180=北，270=东）
+    pitch: 0.0         # 垂直俯仰角度（90=向下，-90=向上）
+
+# ─── 游戏默认设置 ───
+game:
+  # 最少玩家人数，不足则无法开始游戏
+  # 最多玩家人数，超出则无法加入
+
+  # ─── 各阶段倒计时（单位：秒） ───
+  countdown:
+    skill_select: 30    # 技能选择阶段时长
+    skill_show: 10      # 展示双方技能阶段时长
+    ready: 3            # 准备倒计时（传送后）
+
+15.2 map_defaults.yml + maps/ 文件夹 — 地图模板配置（Phase 1）
+------------------------------------------
+
+# ─────────────────────────────────────────────
+地图配置采用双层结构：
+
+  map_defaults.yml              # 单张地图的配置模版（用于自动创建 map.yml）
+  maps/<map_id>/                # 每张地图的独立文件夹，文件夹名 = 地图 id
+      ├── map.yml               #   地图详细配置（出生点、路径、边界），不存在时从 map_defaults.yml 复制
+      └── world/                #   地图模板世界文件（由 Paper 复制使用）
+
+说明：
+  - map_defaults.yml 是单张地图的配置模版，只包含一份默认配置
+  - 当 maps/<id>/map.yml 不存在时，插件自动复制 map_defaults.yml 创建
+  - 如果 maps/<id>/map.yml 已存在，则直接读取，不会覆盖
+  - 地图模板世界文件存放在 maps/<id>/world/ 目录下
+  - 可用地图列表通过扫描 maps/ 文件夹下的子目录获取，文件夹名即为地图 id
+
+15.2.1 map_defaults.yml — 地图配置模版（Phase 1）
+--------------------------------------------------
+
+map_defaults.yml 是单张地图的配置模版（不是索引列表）。
+当 maps/<id>/map.yml 不存在时，插件自动复制此文件创建。
+每张地图的具体配置存放在 maps/<id>/map.yml 中。
+
+# ─────────────────────────────────────────────
+# 地图配置模版（单张地图）
+# 当 maps/<id>/map.yml 不存在时，插件自动复制此文件内容创建
+# ─────────────────────────────────────────────
+
+# 地图显示名称
+display_name: "新地图"
+
+# ─── 队伍配置 ───
+# id:      队伍标识符
+# spawn:   玩家出生点
+# base:    基地位置（用于胜利判定等）
+# soldier: 士兵生成点，支持两种写法：
+#   写法1（两点区域随机生成）：
+#     soldier:
+#       point1: { x, y, z }
+#       point2: { x, y, z }
+#   写法2（单点生成）：
+#     soldier:
+#       x: 0.0  y: 64.0  z: 0.0
+teams:
+  - id: red
+    spawn:
+      x: 0.0
+      y: 64.0
+      z: 0.0
+    base:
+      x: 0.0
+      y: 64.0
+      z: 0.0
+    soldier:
+      x: 0.0
+      y: 64.0
+      z: 0.0
+
+  - id: blue
+    spawn:
+      x: 0.0
+      y: 64.0
+      z: 0.0
+    base:
+      x: 0.0
+      y: 64.0
+      z: 0.0
+    soldier:
+      x: 0.0
+      y: 64.0
+      z: 0.0
+
+15.2.2 maps/<id>/map.yml — 单张地图的详细配置
+-----------------------------------------------
+
+# ─────────────────────────────────────────────
+# 地图配置：<地图名称>
+# maps/<map_id>/map.yml 存储单张地图的详细配置
+# 世界文件存放在 maps/<id>/world/ 文件夹中
+# ─────────────────────────────────────────────
+
+# 地图显示名称
+# 地图模板配置
+15.3 skills.yml — 技能定义（Phase 2）
+---------------------------------------
+
+# ─────────────────────────────────────────────
+# 技能定义
+# 定义游戏中玩家可以选择的技能
+# 在 SKILL_SELECT 阶段通过 GUI 选择
+# 技能底层通过 MythicMobs 释放，此处只定义映射关系
+# ─────────────────────────────────────────────
+
+skills:
+  # ─── 技能条目 ───
+  # id:              技能唯一标识符，内部索引用
+  # display_name:    显示名称，GUI 和消息中使用
+  # description:     技能描述，GUI 中展示
+  # material:        GUI 中显示的物品材质（Bukkit Material 名）
+  # cooldown:        冷却时间（单位：tick，20 tick = 1 秒）
+  # mythic_skill:    对应的 MythicMobs 技能文件名（不含 .yml）
+
+  - id: fireball
+    display_name: "火焰弹"
+    description: "发射一枚火焰弹，对路径上的敌人造成伤害"
+    material: FIRE_CHARGE
+    cooldown: 100              # 5 秒
+    mythic_skill: "VillagerFireball"
+
+  - id: heal
+    display_name: "治疗波"
+    description: "治疗附近所有友方单位"
+    material: GOLDEN_APPLE
+    cooldown: 200              # 10 秒
+    mythic_skill: "VillagerHealWave"
+
+  - id: shield
+    display_name: "护盾"
+    description: "为自己生成一个吸收伤害的护盾"
+    material: SHIELD
+    cooldown: 300              # 15 秒
+    mythic_skill: "VillagerShield"
+
+  - id: summon
+    display_name: "召唤铁傀儡"
+    description: "在前方召唤一个铁傀儡协助战斗"
+    material: IRON_BLOCK
+    cooldown: 400              # 20 秒
+    mythic_skill: "VillagerSummonIronGolem"
+
+  - id: speed_boost
+    display_name: "疾跑"
+    description: "大幅提升移动速度和跳跃能力"
+    material: FEATHER
+    cooldown: 200
+    mythic_skill: "VillagerSpeedBoost"
+
+  - id: arrow_rain
+    display_name: "箭雨"
+    description: "在目标区域降下箭雨"
+    material: BOW
+    cooldown: 300
+    mythic_skill: "VillagerArrowRain"
+
+15.4 messages.yml — 消息文本配置（Phase 2）
+---------------------------------------------
+
+# ─────────────────────────────────────────────
+# 消息文本配置
+# 所有发送给玩家的消息均在此配置
+# 支持 & 颜色代码（&0-&f, &l, &m, &n, &o, &r）
+# 支持占位符变量 {placeholder}
+# 修改后可通过 /vw reload 热重载
+# ─────────────────────────────────────────────
+
+# 全局消息前缀
+prefix: "&7[&6村民战争&7] "
+
+# ─── 游戏流程消息 ───
+game:
+  # 玩家加入游戏（{player}=玩家名, {game}=游戏名, {current}=当前人数, {max}=最大人数）
+  join: "{prefix}&a{player} &7加入了游戏 &e{game}&7（&b{current}&7/&e{max}&7）"
+  # 玩家离开游戏
+  leave: "{prefix}&e{player} &7离开了游戏"
+  # 游戏开始
+  start: "{prefix}&a游戏开始！"
+  # 队伍分配
+  team_assign: "{prefix}&7你被分配到了 &c{team} &7队伍"
+  # 队伍胜利
+  victory: "{prefix}&6🎉 &l{team} &r&6获得胜利！"
+  # 平局
+  draw: "{prefix}&e⚖ 平局！"
+  # 游戏解散（人数不足等）
+  disband: "{prefix}&c游戏已解散，原因：{reason}"
+
+# ─── 技能相关消息 ───
+skill:
+  select_title: "&6选择你的技能"
+  selected: "{prefix}&a已选择技能：&e{skill}"
+  cooldown: "{prefix}&c技能冷却中（{remaining}秒）"
+  not_available: "{prefix}&c此技能暂不可用"
+
+# ─── 击杀消息 ───
+kill:
+  normal: "{prefix}&c{player} &7被 &c{killer} &7击杀"
+  assist: "{prefix}&c{player} &7被 &c{killer} &7击杀（助攻：{assists}）"
+  streak:
+    three: "{prefix}&e{player} &7正在大杀特杀！（3连杀）"
+    five: "{prefix}&6{player} &7无人能挡！（5连杀）"
+    ten: "{prefix}&4{player} &7已经超越神了！（10连杀）"
+
+# ─── 经济消息 ───
+economy:
+  gold_income: "{prefix}&e+{amount} &7金币"
+  kill_bonus: "{prefix}&e+{amount} &7金币（击杀奖励）"
+  assist_bonus: "{prefix}&e+{amount} &7金币（助攻奖励）"
+  not_enough: "{prefix}&c金币不足！需要 {cost}，你有 {balance}"
+
+# ─── 错误/提示消息 ───
+error:
+  not_in_game: "{prefix}&c你不在任何游戏中"
+  game_full: "{prefix}&c游戏已满员"
+  game_started: "{prefix}&c游戏已经开始"
+  not_enough_players: "{prefix}&c玩家人数不足，无法开始（{current}/{required}）"
+  already_in_game: "{prefix}&c你已经在游戏中"
+  command_denied: "{prefix}&c你没有权限执行此命令"
+
+15.5 shop/ 文件夹 — 商店模版（Phase 3）
+-----------------------------------------
+
+# ─────────────────────────────────────────────
+# 商店模版：defaults
+# 由地图配置中 shops 字段引用（如 shops: defaults）
+# 玩家与基地实体交互时打开此商店
+# ─────────────────────────────────────────────
+
+title: "&6商店"
+layout:
+  - "000000000"
+  - "0A0B0C0D0"
+  - "000000000"
+  - "000000000"
+  - "000000000"
+  - "0000X0000"
+
+base:
+  A:
+    material: stone_sword
+    display_name: 武器商店
+    lore: 
+    - "&7点击进入"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1 1"
+        -  "open: 武器商店"
+
+  B:
+    material: iron_helmet
+    display_name: 防具商店
+    lore: 
+    - "&7点击进入"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1"
+        -  "open: 防具商店"
+
+  C:
+    material: golden_apple
+    display_name: 道具商店
+    lore: 
+    - "&7点击进入"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1"
+        -  "open: 道具商店"
+
+  D:
+    material: ender_eye
+    display_name: 特殊商店
+    lore: 
+    - "&7点击进入"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1"
+        -  "open: 特殊商店"
+
+  x:
+    material: barrier
+    display_name: 关闭
+    Value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "close"
+      failure:
+        -  "close"
+15.6 game_modes.yml — GameRule 预设（Phase 3）
+------------------------------------------------
+
+# ─────────────────────────────────────────────
+# GameRule 预设
+# 定义不同游戏模式的规则参数
+# game_modes.yml 中的 presets 被 game_gui/mode_select.yml 读取渲染
+# 支持扩展更多模式（排位、娱乐、极速等）
+# ─────────────────────────────────────────────
+
+presets:
+  # ─── 标准模式 ───
+  standard:
+    display_name: "标准模式"
+
+    # 游戏规则
+    game:
+      max_time: 600               # 最大游戏时长（秒），超时自动平局
+      respawn_time: 60            # 复活等待时间（秒）
+      invincible_time: 30         # 复活后无敌时间（tick）
+
+    # 经济规则
+    economy:
+      gold_interval: 20           # 金币发放间隔（tick，20≈1秒）
+      gold_per_interval: 5        # 每次发放金币数量
+      kill_reward: 10             # 击杀敌方玩家获得金币
+      assist_reward: 5            # 助攻获得金币
+      start_gold: 20              # 游戏开始时初始金币
+
+    # 兵线规则
+    spawn:
+      wave_interval: 200          # 出兵间隔（tick，200≈10秒）
+      max_per_wave: 5             # 每波每路最多士兵数量
+      soldier_health: 20.0       # 士兵生命值（MM 实体）
+      soldier_damage: 3.0        # 士兵攻击力
+      soldier_damage_reduction: 0.3   # 士兵伤害减免比例（0.0-1.0）
+
+    # 胜利规则
+    victory:
+      mode: last_team_standing    # 胜利模式：last_team_standing | most_kills
+      kill_target: 50             # most_kills 模式下目标击杀数
+
+  # ─── 极速模式 ───
+  fast:
+    display_name: "极速模式"
+
+    game:
+      max_time: 300               # 5分钟
+      respawn_time: 30            # 30秒复活
+      invincible_time: 20         # 1秒无敌
+
+    economy:
+      gold_interval: 10           # 每0.5秒发一次金币
+      gold_per_interval: 10       # 每次10金币
+      kill_reward: 20
+      assist_reward: 10
+      start_gold: 50
+
+    spawn:
+      wave_interval: 100          # 每5秒一波
+      max_per_wave: 3
+      soldier_health: 15.0
+      soldier_damage: 4.0
+      soldier_damage_reduction: 0.2
+
+    victory:
+      mode: most_kills
+      kill_target: 30
+
+  # ─── 排位模式（预留） ───
+  # competitive:
+  #   display_name: "排位模式"
+  #   extends: standard          # 支持继承
+  #   game:
+  #     max_time: 900
+  #   economy:
+  #     start_gold: 0
+
+
+15.7 game_status/ 文件夹 — 各状态 UI 配置（Phase 3）
+------------------------------------------------------
+
+为每个游戏状态单独配置 UI 表现（title、subtitle、actionbar、计分板等），
+状态名 = 文件名（如 waiting.yml、playing.yml），
+各文件独立配置，互不依赖。
+
+  文件               说明
+  ────────────────  ─────────────────────────────────
+  waiting.yml      匹配等待阶段，显示匹配中/匹配成功提示
+  skills_select.yml 技能选择阶段，显示倒计时、计分板、技能 GUI
+  skill_show.yml   展示双方技能阶段
+  playing.yml      游戏进行中，计分板、actionbar、击杀特效、连杀播报
+  ending.yml       游戏结束动画，胜负展示、玩家锁定
+  reward.yml       奖励结算，金币明细
+
+15.8 game_gui/ 文件夹 — 大厅 GUI 配置（Phase 3）
+--------------------------------------------------
+
+大厅界面使用与 shop 相同的 layout + base 结构，
+采用多页布局（page1/page2），支持翻页、返回、关闭等动作。
+
+  文件                说明
+  ─────────────────  ─────────────────────────────────
+  map_select.yml     地图选择 GUI，动态读取 maps/ 文件夹
+  mode_select.yml    模式选择 GUI，动态读取 game_modes.yml
+
+十六、ConfigManager 类设计
+============================
+
+16.1 包结构调整
+
+config
+├── ConfigManager.java        # 全局配置加载入口，供插件主类调用
+├── ConfigLoader.java         # YAML 文件读取工具，封装 SnakeYAML 操作
+├── ConfigValidator.java      # 配置校验（路径检查、数值范围、必填字段）
+│
+├── holder
+│   ├── PluginConfig.java     # 映射 config.yml 的 Java 对象
+│   ├── SkillsConfig.java     # 映射 skills.yml，返回 List<SkillDef>
+│   ├── MessagesConfig.java   # 映射 messages.yml，返回 Map<String, String>
+│   ├── ShopConfig.java       # 读取 shop/<name>.yml
+│   └── GameModesConfig.java  # 映射 game_modes.yml，返回 Map<String, RulePreset>
+│
+└── rule
+    ├── GameRule.java         # 运行时规则对象（由 RulePreset 派生，不可变）
+    └── GameRuleLoader.java   # 从 RulePreset 创建 GameRule 实例
+
+16.2 加载流程
+
+  VillagerWar.onEnable()
+        │
+        ▼
+  ConfigManager.loadAll()
+        │
+        ├── loadConfig("config.yml")       ──> PluginConfig
+        ├── loadConfig("skills.yml")       ──> SkillsConfig       (P2 启用)
+        ├── loadConfig("messages.yml")     ──> MessagesConfig     (P2 启用)
+        ├── loadConfig("game_modes.yml")   ──> GameModesConfig    (P2 启用)
+        ├── scanShopFolder()               ──> 扫描 shop/ 加载商店模版 (P3 启用)
+        ├── scanGameStatusFolder()         ──> 扫描 game_status/ 加载状态配置 (P3 启用)
+        └── scanGameGuiFolder()            ──> 扫描 game_gui/ 加载大厅 GUI (P3 启用)
+               ▼
+  对每个文件：
+    1. 检查文件是否存在，不存在则从 jar 资源生成默认文件
+    2. 读取 YAML，反序列化为对应 Holder 对象
+    3. ConfigValidator.validate() 校验必填字段和数值范围
+    4. 校验失败则日志警告，严重错误禁用插件
+
+16.3 从配置到 GameRule 的运行时转换
+
+  插件启动时（静态加载）:
+    game_modes.yml ─────> GameModesConfig (Map<String, RulePreset>)
+
+  创建游戏时（GameManager.createGame 调用）:
+    游戏启动参数（玩家通过 GUI 选定的地图 + 模式）:
+        │
+        ├── 根据 map 字段 ── 在 maps/ 中查找对应子文件夹
+        │                                           │
+        │                                           ▼
+        │                                     GameWorld 创建
+        │                                     地图复制 + 加载
+        │
+         └── 根据选定的 mode ── 查找 GameModesConfig ──> RulePreset
+                                                            │
+                                                            ▼
+                                                     GameRuleLoader.load()
+                                                            │
+                                                            ▼
+                                                     GameRule (不可变)
+                                                            │
+                                                            ▼
+                                                     Game 持有 GameRule
+                                                            │
+                                                            ▼
+                                             Manager 通过 game.getRule() 读取
+
+十七、Phase 配置进度
+======================
+
+  Phase 1（项目骨架）:
+    - ConfigManager 基础框架（loadAll / 默认文件生成 / 基础校验）
+    - PluginConfig  — config.yml 加载
+
+    - scanMapsFolder()   — maps/ 文件夹扫描
+
+  Phase 2（Manager 实现）:
+    - SkillsConfig  — skills.yml 加载
+    - MessagesConfig — messages.yml 加载（替换硬编码消息）
+
+  Phase 3（核心逻辑）:
+    - GameModesConfig + GameRule — game_modes.yml 加载 + 运行时
+    - ConfigValidator 完善
+    - /vw reload 命令支持
+
+十八、配置相关开发规范
+========================
+
+  1. 所有配置加载失败不得导致插件直接崩溃：
+     - 非关键配置（messages, shop）加载失败仅日志警告
+     - 关键配置（config, games, maps）加载失败禁用插件
+
+  2. 配置 Holder 类只做数据映射，不含业务逻辑：
+     - 不要在 Holder 中写 getter 以外的逻辑
+     - 数据转换逻辑放在 ConfigLoader 或 GameRuleLoader
+
+  3. 运行时统一通过 GameRule 读取参数：
+     - Manager 不得直接访问配置文件
+     - 禁止在业务代码中写魔法数字
+     - 所有可调参数必须通过 GameRule 暴露
+
+  4. YAML 默认文件从 resources 目录打包：
+     - 首次启动自动生成，不覆盖用户已有配置
+     - 默认文件包含完整注释，降低配置门槛
+
+
+
+
+
+
+
+

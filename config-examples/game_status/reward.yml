@@ -1,0 +1,33 @@
+﻿reward:
+  duration: 5                     # 结算展示时长（秒）
+
+  # ─── 计分板 ───
+  scoreboard:
+    enabled: true
+    title: "&6&l奖励结算"
+    lines:
+      - "&7━━━━━━━━━━━━━━"
+      - " &f击杀: &c+{kill_gold}"
+      - " &f助攻: &a+{assist_gold}"
+      - " &f参与: &b+{participation_gold}"
+      - ""
+      - " &6总计: &e+{total_gold}"
+      - "&7━━━━━━━━━━━━━━"
+
+  # ─── 奖励规则 ───
+  rewards:
+    participation: 10             # 参与奖励金币
+    kill: 10                     # 每击杀一个敌人奖励
+    assist: 5                    # 每个助攻奖励
+    win_bonus: 30                # 胜利队伍额外奖励
+
+  # ─── 显示效果 ───
+  display:
+    title: "&a&l结算完成"
+    subtitle: "&e+{total_gold} &7金币"
+    sound: "ENTITY_PLAYER_LEVELUP 1 1"
+
+  # ─── 结算后动作 ───
+  after:
+    clear_inventory: true        # 是否清空玩家背包
+    teleport_lobby: true          # 是否自动传送回大厅

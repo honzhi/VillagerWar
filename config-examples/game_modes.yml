@@ -1,0 +1,68 @@
+﻿# ──────────────────────────────────────────────────────────────────────────────
+# GameRule 预设
+# 定义不同游戏模式的规则参数
+# games.yml 中的 rules 字段引用此处的预设 id
+# 支持扩展更多模式（排位、娱乐、极速等）
+# ──────────────────────────────────────────────────────────────────────────────
+
+presets:
+  # ─── 标准模式 ───
+  standard:
+    display_name: "标准模式"
+    # 游戏规则
+    game:
+      max_time: 600               # PLAYING 状态持续时间（秒），超时自动平局
+      respawn_time: 3            # 复活等待时间（秒）
+      invincible_time: 3         # 复活后无敌时间（tick）
+
+    # 经济规则
+    economy:
+      gold_interval: 20           # 金币发放间隔（tick，20≈1秒）
+      gold_per_interval: 5        # 每次发放金币数量
+      kill_reward: 10             # 击杀敌方玩家获得金币
+      assist_reward: 5            # 助攻获得金币
+      start_gold: 20              # 游戏开始时初始金币
+
+    # 兵线规则
+    spawn:
+      wave_interval: 200          # 出兵间隔（tick，200≈10秒）
+      
+    # 特殊事件 暂不开发
+    special_event:
+
+    # 胜利规则
+    victory:
+      mode: last_team_standing    # 胜利模式：last_team_standing杀死其它阵营所有基地   most_kills击杀敌方玩家量(暂不开发)
+      #kill_target: 30 #(暂不开发)
+
+  # ─── 极速模式 ───
+  fast:
+    display_name: "极速模式"
+
+    game:
+      max_time: 300               # PLAYING 状态持续时间（秒），5分钟
+      respawn_time: 3            # 30秒复活
+      invincible_time: 3         # 1秒无敌
+
+    economy:
+      gold_interval: 10           # 每0.5秒发一次金币
+      gold_per_interval: 10       # 每次10金币
+      kill_reward: 20
+      assist_reward: 10
+      start_gold: 50
+
+    spawn:
+      wave_interval: 100          # 每5秒一波
+
+    victory:
+      mode: last_team_standing
+
+
+  # ─── 排位模式（预留，后续启用） ───
+  # competitive:
+  #   display_name: "排位模式"
+  #   extends: standard          # 支持继承标准模式后覆盖部分参数
+  #   game:
+  #     max_time: 900
+  #   economy:
+  #     start_gold: 0

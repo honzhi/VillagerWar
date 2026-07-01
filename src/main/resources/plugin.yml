@@ -1,0 +1,17 @@
+name: VillagerWar
+version: 1.0.0
+main: com.yourname.villagerwar.VillagerWar
+api-version: 1.21
+depend: [MythicMobs]
+commands:
+  villagerwar:
+    aliases: [vw]
+    description: 村民战争主命令
+    usage: /<command> <subcommand> [args]
+permissions:
+  villagerwar.admin:
+    default: op
+    description: 管理员权限
+  villagerwar.player:
+    default: true
+    description: 玩家权限

@@ -1,0 +1,90 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# 商店模版：defaults
+# 由地图配置中 shops 字段引用（如 shops: defaults）
+# 玩家与基地实体交互时打开此商店
+# ──────────────────────────────────────────────────────────────────────────────
+
+# 商店标题
+title: "&6商店"
+layout:
+  - "000000000"
+  - "0A0B0C0D0"
+  - "000000000"
+  - "000000000"
+  - "000000000"
+  - "0000X0000"
+
+base:
+  A:
+    material: stone_sword
+    display_name: 武器商店
+    lore: 
+    - "&7点击进入"
+    value: 0  #价格
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1 1" #播放一个声音
+        -  "open: 武器商店"  #进入另一个商店 
+ 
+  B:
+    material: iron_helmet
+    display_name: 防具商店
+    lore: 
+    - "&7点击进入"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1"
+        -  "open: 防具商店"
+
+  C:
+    material: golden_apple
+    display_name: 道具商店
+    lore: 
+    - "&7点击进入"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1"
+        -  "open: 道具商店"
+
+  D:
+    material: ender_eye
+    display_name: 特殊商店
+    lore: 
+    - "&7点击进入"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "sound: ENTITY_PLAYER_LEVELUP 1 1"
+        -  "open: 特殊商店"
+ 
+  x:
+    material: barrier
+    display_name: 关闭
+    Value: 0
+    conditions:
+      has_money: 0
+      game_time: 0 #秒
+      level: 0
+    buy: 
+      success:
+        -  "close"  #关闭gui
+      failure:
+        -  "close"  #关闭gui

@@ -1,0 +1,89 @@
+﻿# ──────────────────────────────────────────────────────────────────────────────
+# 大厅 GUI：模式选择
+# 选择地图后进入，选择游戏模式
+# 选择地图后进入，选择游戏模式
+# ──────────────────────────────────────────────────────────────────────────────
+
+title: "&8┃ &6{map_name} &8- &e选择模式 &8┃"
+layout:
+  page1:
+    - "aaaaaaaaa"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "←aaaXaaa→"
+
+base:
+  # ─── 装饰边框 ───
+  a:
+    material: black_stained_glass_pane
+    display_name: " "
+    lore: []
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click: []
+
+  # ─── 关闭按钮 ───
+  X:
+    material: barrier
+    display_name: "&c关闭"
+    lore:
+      - "&7点击关闭界面"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "close"
+
+  # ─── 返回地图选择 ───
+  ←:
+    material: book
+    display_name: "&c返回"
+    lore:
+      - "&7返回地图选择"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "back"
+
+  →:
+    material: book
+    display_name: "&c下一页"
+    lore:
+      - "&7点击翻页"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "next_page"
+
+# ─── 模式物品模板（代码动态填充） ───
+# 根据 game_modes.yml 的 presets 动态生成
+# 选择地图后进入，选择游戏模式
+modes:
+  1:
+    material: knowledge_book
+    display_name: "标准模式"
+    lore:
+      - ""
+      - " &7时长: &f{max_time}秒"
+      - " &7复活: &f{respawn_time}秒"
+      - " &7胜利: &f{victory_mode}"
+      - ""
+      - "&e点击开始匹配"
+    click:
+      - "sound: ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+      - "close"
+      - "message: &a正在匹配..."
+      - "match"  #以此模式开始匹配

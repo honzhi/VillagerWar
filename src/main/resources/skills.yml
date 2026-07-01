@@ -1,0 +1,32 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# 技能定义
+# 定义游戏中玩家可以选择的技能
+# 在 SKILL_SELECT 阶段通过 GUI 选择
+# 技能底层通过 MythicMobs 释放，此处只定义映射关系
+# ──────────────────────────────────────────────────────────────────────────────
+skills:
+  火球术:
+    material: book
+    display_name: "火球术"
+    lore:
+      - "释放火球"
+    skill:
+      type: MythicMobs 
+      id: 火球术  #技能ID
+    condition:
+      permission: player.vip
+      leave: 10
+    cooldown: 100 #冷却单位秒
+    mode_key: right_click  #触发该技能的方式  attack攻击到敌人后对敌人触发 damage受到任意伤害后触发 timer定时触发(单位tick) right_click右键触发 left_click左键触发 always一直触发
+
+  治疗术:
+    material: book
+    display_name: "治疗术"
+    lore:
+      - "恢复血量"
+    skill:
+      type: MythicMobs
+      id: 治疗术
+    mode_key: timer
+    cooldown: 100 
+    timer: 20 #每一秒触发一次

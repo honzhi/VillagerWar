@@ -1,0 +1,42 @@
+﻿playing:
+  # ─── 计分板 ───
+  scoreboard:
+    enabled: true
+    title: "&6&l村民战争"
+    lines:
+      - "&7━━━━━━━━━━━━━━"
+      - " &f队伍: &a{team}"
+      - " &f金币: &e{gold}"
+      - " &f击杀: &c{kills}  &f死亡: &7{deaths}"
+      - ""
+      - " &f时间: &b{time}"
+      - " &f比分: &a{team_a_kills}&7 vs &c{team_b_kills}"
+      - "&7━━━━━━━━━━━━━━"
+
+  # ─── 顶部状态栏（ActionBar） ───
+  actionbar:
+    enabled: true
+    template: "&e{gold} &7金币  |  &c❤ {health}  |  &b⏱ {time}"
+
+
+  # ─── 玩家行为限制 ───
+  player:
+    friendly_fire: false         # 是否允许友伤
+    natural_regen: true          # 是否开启自然回血
+    hunger_deplete: false        # 是否掉饥饿值
+    fall_damage: true            # 是否开启摔落伤害
+    keep_inventory: true         # 死亡是否保留物品
+    keep_level: true             # 死亡是否保留经验等级
+
+  # ─── 击杀特效 ───
+  kill_effects:
+    sound: "ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+    particles: true              # 击杀是否播放粒子效果
+
+  # ─── 连杀播报（接管 messages.yml 的显示层级） ───
+  kill_streak:
+    announce: true               # 是否全局播报连杀
+    threshold:                   # 几连杀触发什么消息
+      3: "&e{player} &7正在大杀特杀！（3连杀）"
+      5: "&6{player} &7无人能挡！（5连杀）"
+      10: "&4{player} &7已经超越神了！（10连杀）"

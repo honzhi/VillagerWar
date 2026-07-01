@@ -1,0 +1,20 @@
+﻿# {team}队伍名 {skill}目前选择的技能名称{remain}该状态剩余时间
+skill_show:
+  duration: 5   #技能展示状态持续时间 单位 秒
+  title_hint: #标题提示 可选配置，不配置就不显示
+    title: "技能选择完毕，即将进入战场"
+    subtitle: "请抓紧时间选择你的技能"
+    
+  actionBar: "技能选择倒计时 {remain}" #状态栏提示 可选配置，不配置就不显示
+
+  scoreboard:
+    enabled: true
+    title: "&6&l技能选择"
+    lines:
+      - "&7━━━━━━━━━━━━━━"
+      - " &f队伍: &a{team}"
+      - " &f技能: &e{skill}"
+      - ""
+      - " &f剩余时间: &c{remain}"
+      - " &f已选择: &a{ready_count}&7/&f{total_count}"
+      - "&7━━━━━━━━━━━━━━"

@@ -1,0 +1,32 @@
+debug: true #debug模式
+# ─── 数据库设置 ───
+# 存储玩家数据、战绩统计等持久化信息
+database:
+  # 数据库类型：sqlite | mysql
+  # sqlite：文件存储，无需额外配置，适合小型服务器
+  # mysql：需要单独安装 MySQL 服务，适合大型跨服务器部署
+  type: sqlite
+
+  # ─── MySQL 连接参数（仅在 type: mysql 时启用） ───
+  # host: localhost              # 数据库服务器地址
+  # port: 3306                   # 端口，默认 3306
+  # database: villagerwar        # 数据库名，需提前创建
+  # user: root                   # 用户名
+  # password: ""                 # 密码，留空表示无密码
+
+# ─── 游戏结束后传送设置 ───
+post_game:
+  # 是否启用固定传送点
+  # true:  游戏结束后将玩家传送到下方指定的位置
+  # false: 游戏结束后将玩家传送回加入游戏前的位置
+  teleport_enabled: true
+  # 固定传送点坐标（仅 teleport_enabled: true 时生效）
+  teleport_to:
+    world: lobby
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+
+leave: "vanilla"  #等级设置 插件中所有需要的等级都以此为准 vanilla原版 

@@ -1,0 +1,27 @@
+# Maven
+target/
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.rar
+
+# IDE
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Logs
+*.log

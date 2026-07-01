@@ -1,0 +1,60 @@
+﻿# ──────────────────────────────────────────────────────────────────────────────
+# 消息文本配置
+# 所有发送给玩家的消息均在此配置
+# 支持 & 颜色代码（&0-&f, &l, &m, &n, &o, &r）
+# 支持占位符变量 {placeholder}
+# 修改后可通过 /vw reload 热重载
+# ──────────────────────────────────────────────────────────────────────────────
+
+# 全局消息前缀
+prefix: "&7[&6村民战争&7] "
+
+# ─── 游戏流程消息 ───
+game:
+  # 玩家加入游戏
+  # {player}=玩家名, {game}=游戏名, {current}=当前人数, {max}=最大人数
+  join: "{prefix}&a{player} &7加入了游戏 &e{game}&7（&b{current}&7/&e{max}&7）"
+  # 玩家离开游戏
+  leave: "{prefix}&e{player} &7离开了游戏"
+  # 游戏开始
+  start: "{prefix}&a游戏开始！"
+  # 队伍分配
+  team_assign: "{prefix}&7你被分配到了 &c{team} &7队伍"
+  # 队伍胜利
+  victory: "{prefix}&6🎉 &l{team} &r&6获得胜利！"
+  # 平局
+  draw: "{prefix}&e⚖ 平局！"
+  # 游戏解散（人数不足等）
+  disband: "{prefix}&c游戏已解散，原因：{reason}"
+
+# ─── 技能相关消息 ───
+skill:
+  select_title: "&6选择你的技能"
+  selected: "{prefix}&a已选择技能：&e{skill}"
+  cooldown: "{prefix}&c技能冷却中（{remaining}秒）"
+  not_available: "{prefix}&c此技能暂不可用"
+
+# ─── 击杀消息 ───
+kill:
+  normal: "{prefix}&c{player} &7被 &c{killer} &7击杀"
+  assist: "{prefix}&c{player} &7被 &c{killer} &7击杀（助攻：{assists}）"
+  streak:
+    three: "{prefix}&e{player} &7正在大杀特杀！（3连杀）"
+    five: "{prefix}&6{player} &7无人能挡！（5连杀）"
+    ten: "{prefix}&4{player} &7已经超越神了！（10连杀）"
+
+# ─── 经济消息 ───
+economy:
+  gold_income: "{prefix}&e+{amount} &7金币"
+  kill_bonus: "{prefix}&e+{amount} &7金币（击杀奖励）"
+  assist_bonus: "{prefix}&e+{amount} &7金币（助攻奖励）"
+  not_enough: "{prefix}&c金币不足！需要 {cost}，你有 {balance}"
+
+# ─── 错误/提示消息 ───
+error:
+  not_in_game: "{prefix}&c你不在任何游戏中"
+  game_full: "{prefix}&c游戏已满员"
+  game_started: "{prefix}&c游戏已经开始"
+  not_enough_players: "{prefix}&c玩家人数不足，无法开始（{current}/{required}）"
+  already_in_game: "{prefix}&c你已经在游戏中"
+  command_denied: "{prefix}&c你没有权限执行此命令"

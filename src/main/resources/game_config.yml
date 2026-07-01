@@ -1,0 +1,23 @@
+# ═══════════════════════════════════════════════════
+# 游戏全局默认配置
+# 当 game_modes.yml 中的 presets 未指定某项时使用此默认值
+# ═══════════════════════════════════════════════════
+
+max-players: 40           # 最大玩家数
+min-players: 2            # 最小玩家数（开始游戏所需）
+game-time: 600            # 游戏时长（秒），超时自动平局
+prepare-time: 30          # 准备阶段时长（秒）
+skill-select-time: 30     # 技能选择阶段时长（秒）
+skill-show-time: 5        # 技能展示阶段时长（秒）
+respawn-time: 3           # 复活等待时间（秒）
+invincible-time: 3        # 复活后无敌时间（秒）
+start-gold: 20            # 初始金币
+gold-per-interval: 5      # 每次发放金币数量
+gold-interval: 20         # 金币发放间隔（tick）
+kill-reward: 10           # 击杀奖励金币
+assist-reward: 5          # 助攻奖励金币
+max-team-size: 20         # 每队最大人数
+friendly-fire: false      # 是否开启友伤
+allow-spectate: true      # 是否允许旁观
+auto-balance: true        # 是否自动平衡队伍
+win-condition: KILL_ALL   # 胜利条件

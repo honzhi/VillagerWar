@@ -1,0 +1,77 @@
+﻿# ──────────────────────────────────────────────────────────────────────────────
+# 地图配置：莲花栈桥
+# maps/<map_id>/map.yml 存储单张地图的详细配置
+# 世界文件存放在 maps/<id>/world/ 文件夹中
+# ──────────────────────────────────────────────────────────────────────────────
+
+# 地图显示名称
+display_name: "莲花栈桥"
+
+teams:
+  - id: red
+    player:
+      spawn:
+        points:
+          - {x: -20.5, y: 64, z: 0.5}
+        yaw: 0
+        pitch: 0
+    base:
+      entity:
+        type: mythicmobs
+        id: 红方国王
+      spawn:
+        point: {x: -25, y: 64, z: 0}
+        yaw: 0
+        pitch: 0
+    soldier:
+      entity:
+        type: mythicmobs
+      loop:
+        - 红方僵尸
+        - 红方骷髅
+        - 红方僵尸
+      loop_interval: 60
+      delay: 60
+      spawn:
+        point1: {x: -28, y: 64, z: -8}
+        point2: {x: -15, y: 64, z: 8}
+        yaw: 0
+        pitch: 0
+
+  - id: blue
+    player:
+      spawn:
+        points:
+          - {x: 20.5, y: 64, z: 0.5}
+        yaw: 180
+        pitch: 0
+    base:
+      entity:
+        type: mythicmobs
+        id: 蓝方国王
+      spawn:
+        point: {x: 25, y: 64, z: 0}
+        yaw: 180
+        pitch: 0
+    soldier:
+      entity:
+        type: mythicmobs
+      loop:
+        - 蓝方僵尸
+        - 蓝方骷髅
+        - 蓝方僵尸
+      loop_interval: 60
+      delay: 60
+      spawn:
+        point1: {x: 15, y: 64, z: -8}
+        point2: {x: 28, y: 64, z: 8}
+        yaw: 180
+        pitch: 0
+
+shops: defaults
+
+bounds:
+  min_x: -50
+  max_x: 50
+  min_z: -50
+  max_z: 50
