@@ -25,7 +25,7 @@ public class StartArgument implements SubCommand {
 
     @Override
     public String getDescription() {
-        return "开始游戏";
+        return "开始游戏（管理员）";
     }
 
     @Override
@@ -50,18 +50,12 @@ public class StartArgument implements SubCommand {
 
         Game game = gameOpt.get();
 
-        if (game.getState() != GameState.WAITING) {
+        if (game.getState() != GameState.PREPARING) {
             sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始或正在进行中");
             return true;
         }
 
-        int minPlayers = game.getGameRule().getMinPlayers();
-        if (game.getPlayerCount() < minPlayers) {
-            sender.sendMessage("§7[§6村民战争§7] §c玩家人数不足，无法开始（" + game.getPlayerCount() + "/" + minPlayers + "）");
-            return true;
-        }
-
-        game.getController().transitionTo(GameState.PREPARING);
+        game.getController().transitionTo(GameState.SKILL_SELECT);
         game.getUiManager().getMessageManager().broadcastMessage("game.start");
         return true;
     }

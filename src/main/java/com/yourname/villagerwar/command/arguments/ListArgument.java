@@ -52,7 +52,6 @@ public class ListArgument implements SubCommand {
 
     private String formatState(GameState state) {
         switch (state) {
-            case WAITING: return "§a等待中";
             case PREPARING: return "§6准备中";
             case SKILL_SELECT: return "§e技能选择";
             case SKILL_SHOW: return "§e技能展示";

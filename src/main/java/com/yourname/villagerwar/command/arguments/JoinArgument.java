@@ -25,7 +25,7 @@ public class JoinArgument implements SubCommand {
 
     @Override
     public String getDescription() {
-        return "加入一局游戏";
+        return "加入一局游戏（管理员）";
     }
 
     @Override
@@ -40,6 +40,11 @@ public class JoinArgument implements SubCommand {
             return true;
         }
 
+        if (!sender.hasPermission("villagerwar.admin")) {
+            sender.sendMessage("§c你没有权限执行此命令");
+            return true;
+        }
+
         if (args.length < 1) {
             sender.sendMessage("§c用法: " + getUsage());
             return true;
@@ -49,7 +54,7 @@ public class JoinArgument implements SubCommand {
 
         // Check player isn't already in a game
         if (plugin.getGameManager().getGame(player).isPresent()) {
-            sender.sendMessage("§7[§6村民战争§7] §c你已经在游戏中");
+            sender.sendMessage("§7[§6村民战争§7] §c你已经在该游戏中");
             return true;
         }
 
@@ -67,9 +72,9 @@ public class JoinArgument implements SubCommand {
 
         Game game = gameOpt.get();
 
-        // Check game state
-        if (game.getState() != GameState.WAITING) {
-            sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始，无法加入");
+        // Check game state - only allow join if still in PREPARING
+        if (game.getState() != GameState.PREPARING) {
+            sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始或正在进行中，无法加入");
             return true;
         }
 
@@ -89,7 +94,7 @@ public class JoinArgument implements SubCommand {
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
             return plugin.getGameManager().getGames().stream()
-                    .filter(g -> g.getState() == GameState.WAITING)
+                    .filter(g -> g.getState() == GameState.PREPARING)
                     .map(Game::getGameName)
                     .filter(name -> name.toLowerCase().startsWith(partial))
                     .collect(Collectors.toList());

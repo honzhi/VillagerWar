@@ -26,7 +26,7 @@ public class SetMapArgument implements SubCommand {
 
     @Override
     public String getDescription() {
-        return "设置游戏地图";
+        return "设置游戏地图（管理员）";
     }
 
     @Override
@@ -60,8 +60,8 @@ public class SetMapArgument implements SubCommand {
         }
 
         Game game = gameOpt.get();
-        if (game.getState() != GameState.WAITING) {
-            sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始，无法更改地图");
+        if (game.getState() != GameState.PREPARING) {
+            sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始，无法修改地图");
             return true;
         }
 
@@ -76,8 +76,6 @@ public class SetMapArgument implements SubCommand {
             return true;
         }
 
-        // Note: Map change would require more complex logic (world reload)
-        // For now mark the map name
         sender.sendMessage("§7[§6村民战争§7] §a地图已设置为 §e" + mapName);
         return true;
     }

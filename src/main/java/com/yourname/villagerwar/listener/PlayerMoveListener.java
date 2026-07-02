@@ -39,16 +39,13 @@ public class PlayerMoveListener implements Listener {
         }
 
         switch (state) {
+            case PREPARING:
+                // Allow movement in reserves_seat / lobby
+                break;
             case SKILL_SELECT:
             case SKILL_SHOW:
-            case READY:
-                event.setCancelled(true);
-                break;
-            case WAITING:
-                // Allow free movement in lobby
-                break;
-            case PREPARING:
             case TELEPORT:
+            case READY:
                 event.setCancelled(true);
                 break;
             case PLAYING:

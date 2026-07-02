@@ -29,4 +29,13 @@ post_game:
     yaw: 0.0
     pitch: 0.0
 
+reserves_seat:
+  teleport_to:
+    map: lobby
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+
 leave: "vanilla"  #等级设置 插件中所有需要的等级都以此为准 vanilla原版 
