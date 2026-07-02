@@ -148,17 +148,26 @@ public class GameWorld {
      * 传送所有玩家到各自队伍的出生点
      * @param game 游戏实例
      */
-    public void teleportPlayers(Game game) {
+        public void teleportPlayers(Game game) {
+        plugin.getLogger().info("[Debug] teleportPlayers: world=" + (bukkitWorld != null ? bukkitWorld.getName() : "null") + " loaded=" + loaded);
         if (bukkitWorld == null || !loaded) return;
 
+        plugin.getLogger().info("[Debug] teleportPlayers: " + game.getPlayers().size() + " players");
         for (GamePlayer gp : game.getPlayers()) {
             GamePlayer.Team team = gp.getTeam();
-            if (team == null) continue;
+            if (team == null) {
+                plugin.getLogger().warning("[Debug] " + gp.getUuid() + " no team");
+                continue;
+            }
 
             Player player = gp.getPlayer();
-            if (player == null) continue;
+            if (player == null) {
+                plugin.getLogger().warning("[Debug] GamePlayer has null Bukkit player");
+                continue;
+            }
 
             Location spawnLoc = getTeamSpawnLocation(team, game);
+            plugin.getLogger().info("[Debug] teleport " + player.getName() + " team=" + team + " loc=" + (spawnLoc != null ? spawnLoc.getWorld().getName() + "," + spawnLoc.getBlockX() + "," + spawnLoc.getBlockY() + "," + spawnLoc.getBlockZ() : "null"));
             if (spawnLoc != null) {
                 player.teleport(spawnLoc);
                 player.setFallDistance(0);
@@ -166,10 +175,6 @@ public class GameWorld {
         }
     }
 
-    /**
-     * 返回所有玩家到大传送点
-     * @param game 游戏实例
-     */
     public void returnToLobby(Game game) {
         Location lobbyLoc = getLobbyLocation();
         if (lobbyLoc == null) {
