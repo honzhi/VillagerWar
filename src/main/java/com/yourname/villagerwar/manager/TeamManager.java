@@ -21,7 +21,7 @@ public class TeamManager {
      * 仅在 PREPARING 状态执行。
      */
     public void assignTeams() {
-        if (game.getState() != GameState.PREPARING) return;
+        if (game.getState() != GameState.PREPARING) { com.yourname.villagerwar.VillagerWar.getInstance().getLogger().warning("[Debug] assignTeams skipped: state=" + game.getState()); return; }
 
         List<GamePlayer> players = new ArrayList<>(game.getPlayers());
         Collections.shuffle(players);

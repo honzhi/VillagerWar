@@ -315,6 +315,13 @@ public class LobbyGUI {
                 selectedMap.remove(p.getName());
             }
 
+            // debug
+            VillagerWar.getInstance().getLogger().info("[Debug] Setting PREPARING, assigning teams...");
+            game.setState(com.yourname.villagerwar.GameState.PREPARING);
+            game.getTeamManager().assignTeams();
+            VillagerWar.getInstance().getLogger().info("[Debug] Teleporting players...");
+            gameWorld.teleportPlayers(game);
+
             for (Player p : matched) {
                 p.sendTitle(MessageUtil.colorize("&a&lMatch Found!"),
                             MessageUtil.colorize("&7Entering game..."), 10, 40, 20);
@@ -339,4 +346,4 @@ public class LobbyGUI {
             queue.removeIf(p -> p.getName().equals(playerName));
         }
     }
-}
+}// test
