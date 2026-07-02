@@ -43,10 +43,8 @@ public class GameWorld {
         this.templateName = templateName;
         this.plugin = plugin;
         this.worldUid = UUID.randomUUID();
-        // 生成唯一世界名称：模板名_随机后缀
-        // 世界名只能包含 [a-z0-9/._-]，中文模板名需要转义
-        String safeName = templateName.replaceAll("[^a-zA-Z0-9]", "_");
-        this.worldName = safeName + "_" + worldUid.toString().substring(0, 8);
+        // 世界名使用 game_ + UUID 短格式，保证 Minecraft 合法 [a-z0-9/._-]
+        this.worldName = "game_" + worldUid.toString().substring(0, 8);
         this.loaded = false;
     }
 
