@@ -4,6 +4,7 @@ import com.yourname.villagerwar.bridge.MMBridge;
 import com.yourname.villagerwar.config.ConfigManager;
 import com.yourname.villagerwar.config.holder.SkillsConfig;
 import com.yourname.villagerwar.config.holder.PluginConfig;
+import com.yourname.villagerwar.manager.InventoryManager;
 import com.yourname.villagerwar.world.WorldManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,6 +13,7 @@ public class VillagerWar extends JavaPlugin {
     private GameManager gameManager;
     private ConfigManager configManager;
     private WorldManager worldManager;
+    private InventoryManager inventoryManager;
 
     @Override
     public void onEnable() {
@@ -19,24 +21,22 @@ public class VillagerWar extends JavaPlugin {
         this.configManager = new ConfigManager(this);
         this.worldManager = new WorldManager(this);
         this.gameManager = new GameManager();
+        this.inventoryManager = new InventoryManager(this);
 
         configManager.loadAll();
 
-        // ─── Debug: 模式提示（放在最前） ───
         PluginConfig pc = configManager.getPluginConfig();
         boolean debug = pc.isDebug();
         if (debug) {
             getLogger().info("Debug 模式已启用");
         }
 
-        // ─── Debug: MythicMobs 检测 ───
         if (MMBridge.isMythicMobsLoaded()) {
             getLogger().info("[MMBridge] MythicMobs 插件已就绪");
         } else {
             getLogger().info("[MMBridge] MythicMobs 插件未安装或未启用，技能/怪物功能不可用");
         }
 
-        // ─── Debug: 技能检测 ───
         if (MMBridge.isMythicMobsLoaded()) {
             SkillsConfig sc = configManager.getSkillsConfig();
             for (SkillsConfig.SkillDef skill : sc.getSkills()) {
@@ -84,4 +84,5 @@ public class VillagerWar extends JavaPlugin {
     public GameManager getGameManager() { return gameManager; }
     public ConfigManager getConfigManager() { return configManager; }
     public WorldManager getWorldManager() { return worldManager; }
+    public InventoryManager getInventoryManager() { return inventoryManager; }
 }

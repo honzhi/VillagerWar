@@ -65,4 +65,8 @@ public class GameManager {
             }
         }
     }
+
+    public boolean isInGame(Player player) {
+        return playerGameMap.containsKey(player.getUniqueId());
+    }
 }

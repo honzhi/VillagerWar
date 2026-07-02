@@ -20,15 +20,10 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 大厅 GUI：地图选择 + 模式选择
- */
 public class LobbyGUI {
 
     private static final Map<String, String> openGUIMap = new HashMap<>();
-    // 玩家 -> 选择的地图 ID
     private static final Map<String, String> selectedMap = new HashMap<>();
-    // 匹配队列: key = mapId:modeId, value = 玩家列表
     private static final Map<String, List<Player>> matchQueue = new ConcurrentHashMap<>();
 
     public static void open(Player player, String guiName) {
@@ -38,7 +33,7 @@ public class LobbyGUI {
     public static void open(Player player, String guiName, String mapId) {
         File guiFile = new File(VillagerWar.getInstance().getDataFolder(), "game_gui/" + guiName + ".yml");
         if (!guiFile.exists()) {
-            player.sendMessage(MessageUtil.colorize("&cGUI 文件不存在: " + guiName));
+            player.sendMessage(MessageUtil.colorize("&cGUI file not found: " + guiName));
             return;
         }
 
@@ -52,9 +47,10 @@ public class LobbyGUI {
         ConfigurationSection layoutSection = config.getConfigurationSection("layout");
         List<String> layoutLines = new ArrayList<>();
         if (layoutSection != null) {
-            List<String> page = layoutSection.getStringList("page1");
-            if (page.isEmpty()) page = layoutSection.getStringList("1");
-            layoutLines.addAll(page);
+            layoutLines.addAll(layoutSection.getStringList("page1"));
+            if (layoutLines.isEmpty()) {
+                layoutLines.addAll(layoutSection.getStringList("1"));
+            }
         }
 
         int rows = layoutLines.size();
@@ -119,7 +115,6 @@ public class LobbyGUI {
         return item;
     }
 
-    /** 构建地图选择物品，动态填充玩家数据 */
     private static ItemStack buildMapItem(ConfigurationSection section) {
         if (section == null) return null;
         String materialName = section.getString("material", "book");
@@ -130,15 +125,14 @@ public class LobbyGUI {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
 
-        String displayName = section.getString("display_name", "地图");
+        String displayName = section.getString("display_name", "Map");
         meta.setDisplayName(MessageUtil.colorize(displayName));
 
         List<String> lore = new ArrayList<>();
         for (String line : section.getStringList("lore")) {
-            String mapId = section.getString("map", "");
-            MapConfig mapCfg = VillagerWar.getInstance().getConfigManager().getMapConfig(mapId);
-            // 简单填充占位符
-            line = line.replace("{mode}", "标准模式")
+            MapConfig mapCfg = VillagerWar.getInstance().getConfigManager().getMapConfig(
+                section.getString("map", ""));
+            line = line.replace("{mode}", "CLASSIC")
                        .replace("{current}", String.valueOf(0))
                        .replace("{max}", String.valueOf(40));
             lore.add(MessageUtil.colorize(line));
@@ -149,7 +143,6 @@ public class LobbyGUI {
         return item;
     }
 
-    /** 构建模式选择物品，动态填充规则数据 */
     private static ItemStack buildModeItem(ConfigurationSection section, String mapId) {
         if (section == null) return null;
         String materialName = section.getString("material", "knowledge_book");
@@ -160,12 +153,11 @@ public class LobbyGUI {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
 
-        String displayName = section.getString("display_name", "模式");
+        String displayName = section.getString("display_name", "Mode");
         meta.setDisplayName(MessageUtil.colorize(displayName));
 
         List<String> lore = new ArrayList<>();
         for (String line : section.getStringList("lore")) {
-            // 从 game_modes.yml 读取规则数据填充占位符
             line = line.replace("{max_time}", "600")
                        .replace("{respawn_time}", "5")
                        .replace("{victory_mode}", "KILL_ALL");
@@ -177,22 +169,15 @@ public class LobbyGUI {
         return item;
     }
 
-    // ========== 点击处理 ==========
+    // ========== Click Handler ==========
 
-    /**
-     * 处理大厅 GUI 点击事件
-     * @param guiFile 当前打开的 GUI yml 文件
-     * @param slot    点击的格子
-     */
     public static void handleClick(Player player, String guiName, int slot, String title, ItemStack clicked) {
         if (clicked == null || !clicked.hasItemMeta()) return;
 
-        // 重新读取 YAML 配置，定位点击的物品
         File guiFile = new File(VillagerWar.getInstance().getDataFolder(), "game_gui/" + guiName + ".yml");
         if (!guiFile.exists()) return;
         YamlConfiguration config = YamlConfiguration.loadConfiguration(guiFile);
 
-        // 根据 slot 反向查找对应的配置 key
         List<String> layoutLines = new ArrayList<>();
         ConfigurationSection layoutSection = config.getConfigurationSection("layout");
         if (layoutSection != null) {
@@ -208,22 +193,16 @@ public class LobbyGUI {
         String key = String.valueOf(slotChar);
         if (key.equals("0")) return;
 
-        // 查找物品配置段
         ConfigurationSection itemSection = null;
         if (guiName.equals("map_select")) {
             itemSection = config.getConfigurationSection("maps." + key);
         } else if (guiName.equals("mode_select")) {
             itemSection = config.getConfigurationSection("modes." + key);
         }
-        if (itemSection == null) {
-            itemSection = config.getConfigurationSection(key);
-        }
-        if (itemSection == null) {
-            itemSection = config.getConfigurationSection("base." + key);
-        }
+        if (itemSection == null) itemSection = config.getConfigurationSection(key);
+        if (itemSection == null) itemSection = config.getConfigurationSection("base." + key);
         if (itemSection == null) return;
 
-        // 执行 click 动作列表
         List<String> actions = itemSection.getStringList("click");
         if (actions.isEmpty()) return;
 
@@ -256,7 +235,6 @@ public class LobbyGUI {
         }
 
         if (action.equals("open") && guiName.equals("map_select")) {
-            // 从 map_select 点击地图 → 打开 mode_select
             String mapId = itemSection.getString("map", "");
             if (!mapId.isEmpty()) {
                 selectedMap.put(player.getName(), mapId);
@@ -271,95 +249,93 @@ public class LobbyGUI {
         }
     }
 
-    // ========== 匹配逻辑 ==========
+    // ========== Match Logic ==========
 
     private static void handleMatch(Player player) {
         String mapId = selectedMap.get(player.getName());
         if (mapId == null || mapId.isEmpty()) {
-            player.sendMessage(MessageUtil.colorize("&c请先选择地图"));
+            player.sendMessage(MessageUtil.colorize("&cPlease select a map first"));
             open(player, "map_select");
             return;
         }
 
-        // 获取默认模式名称
         String modeId = "CLASSIC";
 
-        // 检查玩家是否已在游戏中
         if (VillagerWar.getInstance().getGameManager().getGame(player).isPresent()) {
-            player.sendMessage(MessageUtil.colorize("&c你已在游戏中"));
+            player.sendMessage(MessageUtil.colorize("&cYou are already in a game"));
             return;
         }
 
-        // 加入匹配队列
+        // Save inventory and apply queuing preset
+        VillagerWar.getInstance().getInventoryManager().save(player);
+        VillagerWar.getInstance().getInventoryManager().apply(player, "queuing");
+
         String queueKey = mapId + ":" + modeId;
         matchQueue.computeIfAbsent(queueKey, k -> Collections.synchronizedList(new ArrayList<>()));
         List<Player> queue = matchQueue.get(queueKey);
 
         if (queue.contains(player)) {
-            player.sendMessage(MessageUtil.colorize("&c你已在匹配队列中"));
+            player.sendMessage(MessageUtil.colorize("&cYou are already in queue"));
             return;
         }
 
         queue.add(player);
-        player.sendMessage(MessageUtil.colorize("&a已加入匹配队列 (" + mapId + " - " + modeId + ")"));
+        player.sendMessage(MessageUtil.colorize("&aJoined queue (" + mapId + " - " + modeId + ")"));
 
-        // 创建游戏规则（默认值）
         GameRule gameRule = VillagerWar.getInstance().getConfigManager().createGameRule(modeId);
         int minPlayers = gameRule.getMinPlayers();
 
-        // 人数达标 → 创建游戏
         if (queue.size() >= minPlayers) {
-            // 取出所有玩家
             List<Player> matched = new ArrayList<>(queue);
             queue.clear();
 
-            // 创建游戏世界
             GameWorld gameWorld = VillagerWar.getInstance().getWorldManager().createWorld(mapId);
             if (gameWorld == null) {
                 for (Player p : matched) {
-                    p.sendMessage(MessageUtil.colorize("&c地图加载失败"));
+                    p.sendMessage(MessageUtil.colorize("&cFailed to load map"));
+                    VillagerWar.getInstance().getInventoryManager().clear(p);
+                    VillagerWar.getInstance().getInventoryManager().restore(p);
                 }
                 return;
             }
 
-            // 创建游戏
             Game game = VillagerWar.getInstance().getGameManager().createGame(mapId, gameWorld, gameRule);
             if (game == null) {
                 for (Player p : matched) {
-                    p.sendMessage(MessageUtil.colorize("&c游戏创建失败"));
+                    p.sendMessage(MessageUtil.colorize("&cFailed to create game"));
+                    VillagerWar.getInstance().getInventoryManager().clear(p);
+                    VillagerWar.getInstance().getInventoryManager().restore(p);
                 }
                 return;
             }
 
-            // 将所有匹配玩家加入游戏
             for (Player p : matched) {
                 VillagerWar.getInstance().getGameManager().joinGame(p, game);
+                VillagerWar.getInstance().getInventoryManager().apply(p, "lobby");
                 selectedMap.remove(p.getName());
             }
 
-            // 显示匹配成功通知
             for (Player p : matched) {
-                p.sendTitle(MessageUtil.colorize("&a&l匹配成功!"),
-                            MessageUtil.colorize("&7即将进入对局"), 10, 40, 20);
+                p.sendTitle(MessageUtil.colorize("&a&lMatch Found!"),
+                            MessageUtil.colorize("&7Entering game..."), 10, 40, 20);
             }
 
-            // 自动推进到 SKILL_SELECT
             Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
                 game.getController().transitionTo(com.yourname.villagerwar.GameState.SKILL_SELECT);
-            }, 60L); // 3 秒延迟
+            }, 60L);
         } else {
             int need = minPlayers - queue.size();
-            player.sendMessage(MessageUtil.colorize("&e等待更多玩家... 还需 &c" + need + " &e人"));
+            player.sendMessage(MessageUtil.colorize("&eWaiting for more players... Need &c" + need + " &emore"));
         }
     }
 
-    // ========== 工具方法 ==========
+    // ========== Utility ==========
 
     public static String getOpenGUI(String playerName) { return openGUIMap.get(playerName); }
+
     public static void removePlayer(String playerName) {
         openGUIMap.remove(playerName);
         selectedMap.remove(playerName);
-        // 从匹配队列中移除
         for (List<Player> queue : matchQueue.values()) {
             queue.removeIf(p -> p.getName().equals(playerName));
         }

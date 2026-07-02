@@ -42,8 +42,8 @@ public class ConfigManager {
         loadGameConfig();
         loadShopConfigs();
         loadMapConfigs();
-        plugin.getLogger().info("所有配置文件加载完成 (" + shopConfigs.size() + " 个商店, "
-            + mapConfigs.size() + " 个地图)");
+        plugin.getLogger().info("All configs loaded (" + shopConfigs.size() + " shops, "
+            + mapConfigs.size() + " maps)");
     }
 
     public void reloadAll() {
@@ -51,8 +51,6 @@ public class ConfigManager {
         mapConfigs.clear();
         loadAll();
     }
-
-    // ========== 文件保存 ==========
 
     private void saveDefaultFiles() {
         saveResource("config.yml");
@@ -71,6 +69,7 @@ public class ConfigManager {
         saveResource("game_gui/map_select.yml");
         saveResource("game_gui/mode_select.yml");
         saveResource("map_defaults.yml");
+        saveResource("inventory_presets.yml");
     }
 
     private void saveResource(String path) {
@@ -126,7 +125,7 @@ public class ConfigManager {
                 ShopConfig sc = new ShopConfig(file);
                 shopConfigs.put(sc.getName(), sc);
             } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "加载商店文件失败: " + file.getName(), e);
+                plugin.getLogger().log(Level.WARNING, "Failed to load shop: " + file.getName(), e);
             }
         }
     }
@@ -146,7 +145,7 @@ public class ConfigManager {
                 MapConfig mc = new MapConfig(mapFile);
                 mapConfigs.put(mc.getId(), mc);
             } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "加载地图文件失败: " + mapFile.getPath(), e);
+                plugin.getLogger().log(Level.WARNING, "Failed to load map: " + mapFile.getPath(), e);
             }
         }
     }
@@ -167,7 +166,7 @@ public class ConfigManager {
                 MapConfig mc = new MapConfig(mapFile);
                 mapConfigs.put(mc.getId(), mc);
             } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "加载地图文件失败: " + mapFile.getPath(), e);
+                plugin.getLogger().log(Level.WARNING, "Failed to load map: " + mapFile.getPath(), e);
             }
         }
     }
@@ -175,7 +174,7 @@ public class ConfigManager {
     public GameRule createGameRule(String modeName) {
         GameModesConfig.RulePreset preset = gameModesConfig.getPreset(modeName);
         if (preset == null) {
-            plugin.getLogger().warning("未找到游戏模式 " + modeName + "，使用默认值");
+            plugin.getLogger().warning("Game mode not found: " + modeName + ", using defaults");
             return createDefaultGameRule(modeName);
         }
         return GameRuleLoader.load(preset);

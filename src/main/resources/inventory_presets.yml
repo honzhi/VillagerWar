@@ -1,0 +1,33 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 背包预设配置
+# 玩家在不同状态下自动切换背包物品
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+presets:
+
+  # ─── 排队中：退出匹配物品 ───
+  queuing:
+    - material: RED_BED
+      slot: 8
+      amount: 1
+      display_name: "&c退出匹配"
+      lore:
+        - "&7点击退出匹配队列"
+
+  # ─── 备战席：等待时使用的物品 ───
+  lobby:
+    - material: CLOCK
+      slot: 0
+      amount: 1
+      display_name: "&a游戏信息"
+      lore:
+        - "&7查看当前游戏信息"
+
+  # ─── 战斗中：技能书等战斗物品 ───
+  playing:
+    - material: BOOK
+      slot: 0
+      amount: 1
+      display_name: "&6技能"
+      lore:
+        - "&7右键使用技能"
