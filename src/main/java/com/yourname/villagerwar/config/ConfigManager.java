@@ -63,7 +63,6 @@ public class ConfigManager {
         saveResource("shop/defaults.yml");
         saveResource("shop/武器商店.yml");
         saveResource("shop/防具商店.yml");
-        saveResource("game_status/waiting.yml");
         saveResource("game_status/skills_select.yml");
         saveResource("game_status/skill_show.yml");
         saveResource("game_status/playing.yml");
@@ -72,7 +71,6 @@ public class ConfigManager {
         saveResource("game_gui/map_select.yml");
         saveResource("game_gui/mode_select.yml");
         saveResource("map_defaults.yml");
-
     }
 
     private void saveResource(String path) {
@@ -83,9 +81,6 @@ public class ConfigManager {
         }
     }
 
-    /**
-     * 扫描插件 jar 中某个文件夹下的默认文件，复制到数据目录。
-     */
     private void loadPluginConfig() {
         FileConfiguration config = plugin.getConfig();
         this.pluginConfig = new PluginConfig(config);
@@ -156,10 +151,6 @@ public class ConfigManager {
         }
     }
 
-    // ========== 运行时 API ==========
-    /**
-     * 刷新地图配置列表（创建/删除地图后调用）
-     */
     public void refreshMapConfigs() {
         mapConfigs.clear();
         File mapsDir = new File(dataFolder, "maps");
@@ -181,11 +172,10 @@ public class ConfigManager {
         }
     }
 
-
     public GameRule createGameRule(String modeName) {
         GameModesConfig.RulePreset preset = gameModesConfig.getPreset(modeName);
         if (preset == null) {
-            plugin.getLogger().warning("未找到游戏模式: " + modeName + "，使用默认值");
+            plugin.getLogger().warning("未找到游戏模式 " + modeName + "，使用默认值");
             return createDefaultGameRule(modeName);
         }
         return GameRuleLoader.load(preset);
@@ -201,8 +191,6 @@ public class ConfigManager {
             false, true, true,
             "KILL_ALL");
     }
-
-    // ========== Getters ==========
 
     public PluginConfig getPluginConfig() { return pluginConfig; }
     public SkillsConfig getSkillsConfig() { return skillsConfig; }

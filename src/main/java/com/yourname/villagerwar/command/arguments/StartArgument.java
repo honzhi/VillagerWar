@@ -50,7 +50,7 @@ public class StartArgument implements SubCommand {
 
         Game game = gameOpt.get();
 
-        if (game.getState() != GameState.WAITING) {
+        if (game.getState() != GameState.PREPARING) {
             sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始或正在进行中");
             return true;
         }
@@ -61,11 +61,10 @@ public class StartArgument implements SubCommand {
             return true;
         }
 
-        game.getController().transitionTo(GameState.PREPARING);
+        game.getController().transitionTo(GameState.SKILL_SELECT);
         game.getUiManager().getMessageManager().broadcastMessage("game.start");
         return true;
     }
-
     @Override
     public @Nullable List<String> tabComplete(CommandSender sender, String[] args) {
         return Collections.emptyList();

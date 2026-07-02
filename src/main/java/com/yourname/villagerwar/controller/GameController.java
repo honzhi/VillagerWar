@@ -36,10 +36,11 @@ public class GameController {
     public void onStateChange(GameState newState) {
         switch (newState) {
             case WAITING:
-                // 匹配成功进入此状态，分配队伍
-                game.getTeamManager().assignTeams();
+                // 游戏已创建，等待初始化完成
                 break;
             case PREPARING:
+                // 正式进入游戏阶段，分配队伍
+                game.getTeamManager().assignTeams();
                 break;
             case SKILL_SELECT:
                 game.getSkillManager().openSkillSelectGUI();

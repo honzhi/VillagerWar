@@ -52,7 +52,6 @@ public class JoinArgument implements SubCommand {
 
         Player player = (Player) sender;
 
-        // Check player isn't already in a game
         if (plugin.getGameManager().getGame(player).isPresent()) {
             sender.sendMessage("§7[§6村民战争§7] §c你已经在该游戏中");
             return true;
@@ -60,7 +59,6 @@ public class JoinArgument implements SubCommand {
 
         String gameName = args[0];
 
-        // Find game by name
         Optional<Game> gameOpt = plugin.getGameManager().getGames().stream()
                 .filter(g -> g.getGameName().equalsIgnoreCase(gameName))
                 .findFirst();
@@ -72,13 +70,11 @@ public class JoinArgument implements SubCommand {
 
         Game game = gameOpt.get();
 
-        // Check game state
-        if (game.getState() != GameState.WAITING) {
+        if (game.getState() != GameState.PREPARING) {
             sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始或正在进行中，无法加入");
             return true;
         }
 
-        // Check max players
         int maxPlayers = game.getGameRule().getMaxPlayers();
         if (game.getPlayerCount() >= maxPlayers) {
             sender.sendMessage("§7[§6村民战争§7] §c游戏已满员");
@@ -94,7 +90,7 @@ public class JoinArgument implements SubCommand {
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
             return plugin.getGameManager().getGames().stream()
-                    .filter(g -> g.getState() == GameState.WAITING)
+                    .filter(g -> g.getState() == GameState.PREPARING)
                     .map(Game::getGameName)
                     .filter(name -> name.toLowerCase().startsWith(partial))
                     .collect(Collectors.toList());

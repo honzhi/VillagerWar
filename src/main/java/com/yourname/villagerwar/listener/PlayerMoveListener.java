@@ -40,19 +40,17 @@ public class PlayerMoveListener implements Listener {
 
         switch (state) {
             case WAITING:
-                // 备战席/大厅，允许移动
-                break;
             case PREPARING:
-                // 备战席/大厅，允许移动
-                break;
             case SKILL_SELECT:
             case SKILL_SHOW:
+                // 备战席阶段（TELEPORT 之前），允许移动
+                break;
             case TELEPORT:
             case READY:
                 event.setCancelled(true);
                 break;
             case PLAYING:
-                // Allow movement - border check could be added here
+                // 游戏中，允许移动
                 break;
             case ENDING:
             case REWARD:
