@@ -3,7 +3,6 @@ package com.yourname.villagerwar.command.arguments;
 import com.yourname.villagerwar.Game;
 import com.yourname.villagerwar.VillagerWar;
 import com.yourname.villagerwar.config.rule.GameRule;
-import com.yourname.villagerwar.world.GameWorld;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -60,10 +59,9 @@ public class CreateArgument implements SubCommand {
         }
 
         // Create default world and rule for now
-        GameWorld gameWorld = plugin.getWorldManager().createWorld(gameName);
             GameRule gameRule = com.yourname.villagerwar.config.rule.GameRuleLoader.load(plugin.getConfigManager().getGameModesConfig().getPresets().values().iterator().next());
 
-        Game game = plugin.getGameManager().createGame(gameName, gameWorld, gameRule);
+        Game game = plugin.getGameManager().createGame(gameName, gameName, "default", gameRule);
         plugin.getGameManager().joinGame(player, game);
 
         sender.sendMessage("§7[§6村民战争§7] §a游戏 §e" + gameName + " §a已创建，你已自动加入！");

@@ -8,9 +8,9 @@ public class GameManager {
     private final Map<UUID, Game> games = new HashMap<>();
     private final Map<UUID, UUID> playerGameMap = new HashMap<>();
 
-    public Game createGame(String gameName, com.yourname.villagerwar.world.GameWorld gameWorld,
+    public Game createGame(String gameName, String mapId, String modeId,
                            com.yourname.villagerwar.config.rule.GameRule gameRule) {
-        Game game = new Game(gameName, gameWorld, gameRule);
+        Game game = new Game(gameName, mapId, modeId, gameRule);
         games.put(game.getGameId(), game);
         game.getController().start();
         return game;
@@ -51,11 +51,6 @@ public class GameManager {
         playerGameMap.put(player.getUniqueId(), game.getGameId());
     }
 
-
-    /**
-     * 查找或创建游戏（备战席模式）
-     * 先找同地图同模式且处于PREPARING状态的游戏，没有则新建
-     */
     public Game findOrCreateGame(String mapId, String modeId) {
         // 找已有的PREPARING游戏
         for (Game g : games.values()) {
@@ -65,18 +60,13 @@ public class GameManager {
             }
         }
 
-        // 创建新游戏
+        // 创建新游戏（不创建世界，延迟到TELEPORT阶段）
         VillagerWar plugin = VillagerWar.getInstance();
-        com.yourname.villagerwar.world.GameWorld gameWorld = plugin.getWorldManager().createWorld(mapId);
-        if (gameWorld == null || !gameWorld.isLoaded()) {
-            plugin.getLogger().severe("[Debug] Failed to create world for " + mapId);
-            return null;
-        }
-
         com.yourname.villagerwar.config.rule.GameRule gameRule = plugin.getConfigManager().createGameRule(modeId);
         String gameName = mapId + "_" + modeId;
-        return createGame(gameName, gameWorld, gameRule);
+        return createGame(gameName, mapId, modeId, gameRule);
     }
+
     public void leaveGame(Player player) {
         UUID playerUuid = player.getUniqueId();
         UUID gameId = playerGameMap.remove(playerUuid);
@@ -86,6 +76,11 @@ public class GameManager {
                 GamePlayer gp = game.getPlayer(playerUuid);
                 if (gp != null) game.removePlayer(gp);
                 if (game.getPlayerCount() == 0) {
+                    // 清理备战席实例
+                    if (game.getReservesSeatName() != null) {
+                        VillagerWar.getInstance().getWorldManager().deleteReservesSeat(game.getReservesSeatName());
+                        game.setReservesSeatName(null);
+                    }
                     removeGame(gameId);
                 }
             }

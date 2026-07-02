@@ -32,13 +32,17 @@ public class GameController {
             tickTask.cancel();
             tickTask = null;
         }
-        game.getGameWorld().unload();
+        if (game.getGameWorld() != null) {
+            game.getGameWorld().unload();
+        }
         game.getUiManager().clearAll();
     }
 
     public void onStateChange(GameState newState) {
         switch (newState) {
             case PREPARING:
+                // 创建游戏地图世界
+                game.createGameWorld();
                 game.getTeamManager().assignTeams();
                 break;
             case SKILL_SELECT:
@@ -54,6 +58,11 @@ public class GameController {
                     }
                 }
                 game.getGameWorld().teleportPlayers(game);
+                // 清理备战席实例
+                if (game.getReservesSeatName() != null) {
+                    VillagerWar.getInstance().getWorldManager().deleteReservesSeat(game.getReservesSeatName());
+                    game.setReservesSeatName(null);
+                }
                 break;
             case READY:
                 break;
@@ -74,6 +83,8 @@ public class GameController {
                     }
                 }
                 game.getGameWorld().returnToLobby(game);
+                // 游戏结束后删除游戏世界
+                game.destroyGameWorld();
                 break;
         }
     }

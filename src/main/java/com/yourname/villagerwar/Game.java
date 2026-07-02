@@ -13,8 +13,11 @@ public class Game {
     private final UUID gameId;
     private final String gameName;
     private GameState state;
-    private final GameWorld gameWorld;
+    private GameWorld gameWorld;
     private final GameRule gameRule;
+    private final String mapId;
+    private final String modeId;
+    private String reservesSeatName;
     private int gameTime;
     private final List<GamePlayer> players;
 
@@ -28,11 +31,14 @@ public class Game {
 
     private final GameController controller;
 
-    public Game(String gameName, GameWorld gameWorld, GameRule gameRule) {
+    public Game(String gameName, String mapId, String modeId, GameRule gameRule) {
         this.gameId = UUID.randomUUID();
         this.gameName = gameName;
+        this.mapId = mapId;
+        this.modeId = modeId;
         this.state = GameState.PREPARING;
-        this.gameWorld = gameWorld;
+        this.gameWorld = null;
+        this.reservesSeatName = null;
         this.gameRule = gameRule;
         this.gameTime = 0;
         this.players = new ArrayList<>();
@@ -45,6 +51,29 @@ public class Game {
         this.victoryManager = new VictoryManager(this);
         this.uiManager = new UIManager(this);
         this.controller = new GameController(this);
+    }
+
+    /**
+     * 创建并加载游戏地图世界（延迟加载，在 TELEPORT 阶段调用）
+     */
+    public boolean createGameWorld() {
+        if (gameWorld != null && gameWorld.isLoaded()) return true;
+        gameWorld = VillagerWar.getInstance().getWorldManager().createWorld(mapId);
+        if (gameWorld == null || !gameWorld.isLoaded()) {
+            VillagerWar.getInstance().getLogger().severe("[Debug] Failed to create world for " + mapId);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 销毁游戏地图世界
+     */
+    public void destroyGameWorld() {
+        if (gameWorld != null) {
+            VillagerWar.getInstance().getWorldManager().deleteGameWorld(gameWorld);
+            gameWorld = null;
+        }
     }
 
     public void setState(GameState newState) {
@@ -70,9 +99,13 @@ public class Game {
 
     public UUID getGameId() { return gameId; }
     public String getGameName() { return gameName; }
+    public String getMapId() { return mapId; }
+    public String getModeId() { return modeId; }
     public GameState getState() { return state; }
     public GameWorld getGameWorld() { return gameWorld; }
     public GameRule getGameRule() { return gameRule; }
+    public String getReservesSeatName() { return reservesSeatName; }
+    public void setReservesSeatName(String name) { this.reservesSeatName = name; }
     public int getGameTime() { return gameTime; }
     public List<GamePlayer> getPlayers() { return players; }
     public int getPlayerCount() { return players.size(); }
