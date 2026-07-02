@@ -325,8 +325,14 @@ public class LobbyGUI {
                 }
                 game.setState(GameState.PREPARING);
                 game.getGameWorld().teleportPlayers(game);
-                game.setState(GameState.PLAYING);
-            }, 200L); // 10秒 = 200 tick        } else {
+                // 进入技能选择阶段，5秒后自动进入游戏
+                game.setState(GameState.SKILL_SELECT);
+                Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                    if (game.getState() == GameState.SKILL_SELECT) {
+                        game.setState(GameState.PLAYING);
+                    }
+                }, 100L); // 5秒后自动进入PLAYING
+            }, 200L); // 10秒倒计时        } else {
             int need = gameRule.getMinPlayers() - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要 &c" + need + " &e人"));
         }
