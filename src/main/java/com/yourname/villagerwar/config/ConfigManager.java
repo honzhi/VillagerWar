@@ -154,6 +154,30 @@ public class ConfigManager {
     }
 
     // ========== 运行时 API ==========
+    /**
+     * 刷新地图配置列表（创建/删除地图后调用）
+     */
+    public void refreshMapConfigs() {
+        mapConfigs.clear();
+        File mapsDir = new File(dataFolder, "maps");
+        if (!mapsDir.isDirectory()) {
+            mapsDir.mkdirs();
+            return;
+        }
+        File[] mapDirs = mapsDir.listFiles(File::isDirectory);
+        if (mapDirs == null) return;
+        for (File mapDir : mapDirs) {
+            File mapFile = new File(mapDir, "map.yml");
+            if (!mapFile.exists()) continue;
+            try {
+                MapConfig mc = new MapConfig(mapFile);
+                mapConfigs.put(mc.getId(), mc);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "加载地图文件失败: " + mapFile.getPath(), e);
+            }
+        }
+    }
+
 
     public GameRule createGameRule(String modeName) {
         GameModesConfig.RulePreset preset = gameModesConfig.getPreset(modeName);

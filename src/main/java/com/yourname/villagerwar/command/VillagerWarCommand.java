@@ -29,6 +29,7 @@ public class VillagerWarCommand implements CommandExecutor, TabCompleter {
         register(new ListArgument(plugin));
         register(new SetMapArgument(plugin));
         register(new GuiArgument(plugin));
+        register(new MapArgument(plugin));
     }
 
     private void register(SubCommand subCommand) {

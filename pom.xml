@@ -19,23 +19,13 @@
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
-        <repository>
-            <id>lumine</id>
-            <url>https://mvn.lumine.io/repository/maven/</url>
-        </repository>
-    </repositories>
+        </repositories>
 
     <dependencies>
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>1.21-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.lumine</groupId>
-            <artifactId>Mythic-Dist</artifactId>
-            <version>5.11.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -60,3 +50,7 @@
         </plugins>
     </build>
 </project>
+
+
+
+

@@ -57,9 +57,15 @@ public class GameWorld {
             return;
         }
 
-        File templateFolder = new File(plugin.getDataFolder(), "maps/" + templateName + "/world");
-        if (!templateFolder.exists()) {
-            plugin.getLogger().severe("模板地图不存在: " + templateFolder.getAbsolutePath());
+        File mapDir = new File(plugin.getDataFolder(), "maps/" + templateName);
+        if (!mapDir.isDirectory()) {
+            plugin.getLogger().severe("模板地图不存在: " + mapDir.getAbsolutePath());
+            return;
+        }
+        File templateFolder = findMapWorldFolder(mapDir);
+        if (templateFolder == null) {
+            plugin.getLogger().severe("未找到地图世界文件: " + mapDir.getAbsolutePath()
+                + "（请放入含 level.dat 的文件夹）");
             return;
         }
 
@@ -299,6 +305,23 @@ public class GameWorld {
         folder.delete();
     }
 
+    /**
+     * 在地图文件夹下找到含 level.dat 的子文件夹
+     * 不再限定 world/ 文件夹名称，只认 level.dat
+     */
+    private File findMapWorldFolder(File mapDir) {
+        if (!mapDir.isDirectory()) return null;
+        File[] subDirs = mapDir.listFiles(File::isDirectory);
+        if (subDirs != null) {
+            for (File subDir : subDirs) {
+                if (new File(subDir, "level.dat").exists()) {
+                    return subDir;
+                }
+            }
+        }
+        return null;
+    }
+
     // ─── Getters ───
 
     public String getTemplateName() { return templateName; }
@@ -308,3 +331,5 @@ public class GameWorld {
     public MapConfig getMapConfig() { return mapConfig; }
     public UUID getWorldUid() { return worldUid; }
 }
+
+
