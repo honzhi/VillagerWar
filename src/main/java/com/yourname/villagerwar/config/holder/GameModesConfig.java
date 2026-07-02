@@ -56,6 +56,7 @@ public class GameModesConfig {
         public RulePreset(String name, ConfigurationSection section) {
             this.name = name;
             this.displayName = section.getString("display_name", name);
+            this.minPlayers = section.getInt("min_players", minPlayers);
 
             // 游戏参数
             ConfigurationSection gameSection = section.getConfigurationSection("game");
