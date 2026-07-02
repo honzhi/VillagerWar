@@ -78,6 +78,11 @@ public class GameWorld {
         // 复制模板文件夹到目标世界
         try {
             copyFolder(templateFolder, targetFolder);
+                        File uidFile = new File(targetFolder, "uid.dat");
+            if (uidFile.exists()) {
+                uidFile.delete();
+                plugin.getLogger().info("已删除 uid.dat，避免世界重复冲突");
+            }
             plugin.getLogger().info("模板 " + templateName + " 已复制到 " + worldName);
         } catch (IOException e) {
             plugin.getLogger().severe("复制模板地图失败: " + e.getMessage());
