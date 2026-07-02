@@ -335,7 +335,6 @@ public class LobbyGUI {
 
     public static void removePlayer(String playerName) {
         openGUIMap.remove(playerName);
-        selectedMap.remove(playerName);
         for (List<Player> queue : matchQueue.values()) {
             queue.removeIf(p -> p.getName().equals(playerName));
         }
