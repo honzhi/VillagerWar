@@ -9,6 +9,7 @@ presets:
   # ─── 标准模式 ───
   standard:
     display_name: "标准模式"
+    min_players: 1               # 最少玩家数
     # 游戏规则
     game:
       max_time: 600               # PLAYING 状态持续时间（秒），超时自动平局
@@ -38,6 +39,7 @@ presets:
   # ─── 极速模式 ───
   fast:
     display_name: "极速模式"
+    min_players: 1               # 最少玩家数
 
     game:
       max_time: 300               # PLAYING 状态持续时间（秒），5分钟
