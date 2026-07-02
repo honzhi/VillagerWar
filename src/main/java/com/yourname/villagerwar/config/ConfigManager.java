@@ -89,6 +89,9 @@ public class ConfigManager {
     private void loadPluginConfig() {
         FileConfiguration config = plugin.getConfig();
         this.pluginConfig = new PluginConfig(config);
+        plugin.getLogger().info("[Config] debug: " + pluginConfig.isDebug());
+        plugin.getLogger().info("[Config] raw debug: " + config.getBoolean("debug", false));
+        plugin.getLogger().info("[Config] keys: " + config.getKeys(false));
     }
 
     private void loadSkillsConfig() {

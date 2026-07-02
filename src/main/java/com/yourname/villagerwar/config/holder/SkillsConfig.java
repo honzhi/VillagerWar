@@ -14,8 +14,10 @@ public class SkillsConfig {
     public SkillsConfig(ConfigurationSection section) {
         this.skills = new ArrayList<>();
         if (section == null) return;
-        for (String key : section.getKeys(false)) {
-            ConfigurationSection skillSection = section.getConfigurationSection(key);
+        ConfigurationSection skillsSection = section.getConfigurationSection("skills");
+        if (skillsSection == null) return;
+        for (String key : skillsSection.getKeys(false)) {
+            ConfigurationSection skillSection = skillsSection.getConfigurationSection(key);
             if (skillSection == null) continue;
             this.skills.add(new SkillDef(key, skillSection));
         }
@@ -53,7 +55,7 @@ public class SkillsConfig {
             }
             this.material = mat;
             this.cooldown = section.getInt("cooldown", 10);
-            this.mythicSkill = section.getString("mythic-skill", "");
+            this.mythicSkill = section.getString("skill.id", "");
             this.modeKey = section.getString("mode-key", "DEFAULT");
             this.timer = section.getInt("timer", 0);
         }
