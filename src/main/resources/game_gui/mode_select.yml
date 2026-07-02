@@ -7,14 +7,13 @@ title: "&8┃&6{map_name} &8- &e选择模式 &8┃"
 layout:
   page1:
     - "aaaaaaaaa"
+    - "a0120340a"
     - "a0000000a"
-    - "a0001000a"
     - "a0000000a"
     - "a0000000a"
     - "←aaaXaaa→"
 
 base:
-  # ═══ 装饰边框 ═══
   a:
     material: black_stained_glass_pane
     display_name: " "
@@ -26,7 +25,6 @@ base:
       level: 0
     click: []
 
-  # ═══ 关闭按钮 ═══
   X:
     material: barrier
     display_name: "&c关闭"
@@ -40,7 +38,6 @@ base:
     click:
       - "close"
 
-  # ═══ 返回地图选择 ═══
   ←:
     material: book
     display_name: "&c返回"
@@ -67,9 +64,6 @@ base:
     click:
       - "next_page"
 
-# ═══ 模式物品模板（代码动态填充） ═══
-# 根据 game_modes.yml 的 presets 动态生成
-# 选择地图后进入，选择游戏模式
 modes:
   1:
     material: knowledge_book
@@ -83,6 +77,5 @@ modes:
       - "&e点击开始匹配"
     click:
       - "sound: ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
-      - "close"
       - "message: &a正在匹配..."
       - "match"
