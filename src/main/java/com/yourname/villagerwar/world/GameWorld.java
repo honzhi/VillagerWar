@@ -44,7 +44,9 @@ public class GameWorld {
         this.plugin = plugin;
         this.worldUid = UUID.randomUUID();
         // 生成唯一世界名称：模板名_随机后缀
-        this.worldName = templateName + "_" + worldUid.toString().substring(0, 8);
+        // 世界名只能包含 [a-z0-9/._-]，中文模板名需要转义
+        String safeName = templateName.replaceAll("[^a-zA-Z0-9]", "_");
+        this.worldName = safeName + "_" + worldUid.toString().substring(0, 8);
         this.loaded = false;
     }
 
@@ -86,6 +88,7 @@ public class GameWorld {
 
         // 加载世界
         WorldCreator creator = new WorldCreator(worldName);
+        plugin.getLogger().info("[Debug] Creating world: " + worldName + " (template: " + templateName + ")");
         creator.type(WorldType.FLAT);
         creator.generateStructures(false);
 
