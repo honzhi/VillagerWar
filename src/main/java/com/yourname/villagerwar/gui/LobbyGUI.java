@@ -286,19 +286,19 @@ public class LobbyGUI {
                 // 加入游戏并传送到备战席（reserves_seat）
         VillagerWar.getInstance().getGameManager().joinGame(player, game);
 
-        // 创建备战席世界实例，失败则传送到主世界
+        // 创建备战席世界实例
         GameWorld reservesSeat = VillagerWar.getInstance().getWorldManager().createReservesSeat();
-        if (reservesSeat != null && reservesSeat.isLoaded()) {
-            game.setReservesSeatName(reservesSeat.getWorldName());
-            org.bukkit.Location seatLoc = VillagerWar.getInstance().getWorldManager().getReservesSeatLocation(reservesSeat);
-            if (seatLoc != null) {
-                player.teleport(seatLoc);
-                player.setFallDistance(0);
-            }
-        } else {
-            // 无备战席模板时，传送到主世界出生点
-            player.sendMessage(MessageUtil.colorize("&e未配置备战席地图，已传送到主世界"));
-            player.teleport(org.bukkit.Bukkit.getWorlds().get(0).getSpawnLocation());
+        if (reservesSeat == null || !reservesSeat.isLoaded()) {
+            player.sendMessage(MessageUtil.colorize("&c未能识别到备战席地图，请联系管理员"));
+            VillagerWar.getInstance().getInventoryManager().clear(player);
+            VillagerWar.getInstance().getInventoryManager().restore(player);
+            VillagerWar.getInstance().getGameManager().leaveGame(player);
+            return;
+        }
+        game.setReservesSeatName(reservesSeat.getWorldName());
+        org.bukkit.Location seatLoc = VillagerWar.getInstance().getWorldManager().getReservesSeatLocation(reservesSeat);
+        if (seatLoc != null) {
+            player.teleport(seatLoc);
             player.setFallDistance(0);
         }
         selectedMap.remove(player.getName());
