@@ -145,46 +145,40 @@ public class WorldManager {
     /**
      * 创建备战席世界实例（从 config 指定的模板创建）
      */
-    public GameWorld createReservesSeat() {
+        public GameWorld createReservesSeat() {
         String worldName = plugin.getConfig().getString("reserves_seat.teleport_to.map", "reserves_seat");
         seatCounter++;
         String seatInstanceName = "reserves_seat" + seatCounter;
 
         // 检查世界是否已加载
         World bukkitWorld = Bukkit.getWorld(worldName);
-        if (bukkitWorld == null) {
-            // 尝试从服务器根目录加载已存在的世界
-            File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
-            if (worldFolder.exists()) {
-                bukkitWorld = Bukkit.createWorld(new org.bukkit.WorldCreator(worldName));
-            }
-        }
-
-        if (bukkitWorld == null) {
-            // 尝试从模板创建
-            GameWorld seat = new GameWorld(worldName, plugin);
-            seat.load();
-            if (!seat.isLoaded()) {
-                plugin.getLogger().severe("无法创建备战席实例: " + seatInstanceName + "（模板 " + worldName + " 不存在）");
-                seatCounter--;
-                return null;
-            }
+        if (bukkitWorld != null) {
+            plugin.getLogger().info("[Debug] 备战席世界 " + worldName + " 已加载，直接使用");
+            GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
             reservesSeats.put(seatInstanceName, seat);
-            plugin.getLogger().info("备战席实例 " + seatInstanceName + " 已从模板创建");
             return seat;
         }
 
-        // 使用已存在的世界
-        GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
-        reservesSeats.put(seatInstanceName, seat);
-        plugin.getLogger().info("备战席实例 " + seatInstanceName + " 使用已有世界: " + worldName);
-        return seat;
-    }
+        // 尝试从服务器根目录加载世界
+        File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
+        plugin.getLogger().info("[Debug] 检查世界文件夹: " + worldFolder.getAbsolutePath() + " 存在=" + worldFolder.exists());
+        if (worldFolder.exists() && new File(worldFolder, "level.dat").exists()) {
+            plugin.getLogger().info("[Debug] 加载已有世界: " + worldName);
+            bukkitWorld = Bukkit.createWorld(new org.bukkit.WorldCreator(worldName));
+            if (bukkitWorld != null) {
+                plugin.getLogger().info("[Debug] 世界 " + worldName + " 加载成功");
+                GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
+                reservesSeats.put(seatInstanceName, seat);
+                return seat;
+            } else {
+                plugin.getLogger().severe("[Debug] 世界 " + worldName + " 加载失败（Bukkit.createWorld返回null）");
+            }
+        }
 
-    /**
-     * 删除备战席世界实例
-     */
-    public void deleteReservesSeat(String seatName) {
+        plugin.getLogger().severe("无法创建备战席实例: " + seatInstanceName + "（世界 " + worldName + " 不存在或无法加载）");
+        seatCounter--;
+        return null;
+    }public void deleteReservesSeat(String seatName) {
         GameWorld seat = reservesSeats.remove(seatName);
         if (seat != null) {
             seat.unload();
