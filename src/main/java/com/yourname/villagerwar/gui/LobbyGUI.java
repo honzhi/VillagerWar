@@ -309,30 +309,49 @@ public class LobbyGUI {
                 }
             }
 
-            // 倒计时后再分配队伍和传送，让玩家先留在备战席
+            // 状态链：分配队伍 -> 技能选择 -> 技能展示 -> 传送 -> Ready -> 游戏开始
             Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
-                // 检查游戏是否还存在
                 Optional<Game> gameOpt = VillagerWar.getInstance().getGameManager().getGame(game.getGameId());
-                if (gameOpt.isEmpty() || game.getState() == GameState.PLAYING) return;
+                if (gameOpt.isEmpty()) return;
 
-                VillagerWar.getInstance().getLogger().info("[Debug] 倒计时结束，开始分配队伍并传送...");
-                for (GamePlayer gp : game.getPlayers()) {
-                    Player p = gp.getPlayer();
-                    if (p != null) {
-                        p.sendTitle(MessageUtil.colorize("&a&l游戏开始！"),
-                            MessageUtil.colorize("&7祝你好运！"), 10, 60, 20);
-                    }
-                }
+                VillagerWar.getInstance().getLogger().info("[Debug] 第一步：分配队伍（备战席）");
                 game.setState(GameState.PREPARING);
-                game.getGameWorld().teleportPlayers(game);
-                // 进入技能选择阶段，5秒后自动进入游戏
-                game.setState(GameState.SKILL_SELECT);
+
                 Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
-                    if (game.getState() == GameState.SKILL_SELECT) {
-                        game.setState(GameState.PLAYING);
-                    }
-                }, 100L); // 5秒后自动进入PLAYING
-            }, 200L); // 10秒倒计时        } else {
+                    if (game.getState() != GameState.PREPARING) return;
+                    VillagerWar.getInstance().getLogger().info("[Debug] 第二步：技能选择");
+                    game.setState(GameState.SKILL_SELECT);
+
+                    Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                        if (game.getState() != GameState.SKILL_SELECT) return;
+                        VillagerWar.getInstance().getLogger().info("[Debug] 第三步：技能展示");
+                        game.setState(GameState.SKILL_SHOW);
+
+                        Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                            if (game.getState() != GameState.SKILL_SHOW) return;
+                            VillagerWar.getInstance().getLogger().info("[Debug] 第四步：传送至游戏地图");
+                            game.setState(GameState.TELEPORT);
+
+                            Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                                if (game.getState() != GameState.TELEPORT) return;
+                                VillagerWar.getInstance().getLogger().info("[Debug] 第五步：Ready 倒计时");
+                                game.setState(GameState.READY);
+
+                                Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                                    if (game.getState() != GameState.READY) return;
+                                    VillagerWar.getInstance().getLogger().info("[Debug] 第六步：游戏开始！");
+                                    game.setState(GameState.PLAYING);
+                                }, 60L);  // Ready 3s
+
+                            }, 60L);  // 传送后3s
+
+                        }, 60L);  // 技能展示3s
+
+                    }, 100L);  // 技能选择5s
+
+                }, 100L);  // 分配队伍后5s
+
+            }, 200L);  // 总倒计时10s
             int need = gameRule.getMinPlayers() - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要 &c" + need + " &e人"));
         }
