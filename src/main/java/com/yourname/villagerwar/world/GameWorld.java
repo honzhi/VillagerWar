@@ -48,7 +48,23 @@ public class GameWorld {
         this.loaded = false;
     }
 
-    /**
+      /**
+     * 使用已有的 Bukkit World 创建 GameWorld（不复制模板）
+     */
+    public GameWorld(String templateName, VillagerWar plugin, World bukkitWorld) {
+        this.templateName = templateName;
+        this.plugin = plugin;
+        this.worldUid = UUID.randomUUID();
+        this.worldName = bukkitWorld.getName();
+        this.bukkitWorld = bukkitWorld;
+        this.loaded = true;
+        // 尝试加载地图配置
+        File mapConfigFile = new File(plugin.getDataFolder(), "maps/" + templateName + "/map.yml");
+        if (mapConfigFile.exists()) {
+            this.mapConfig = new MapConfig(mapConfigFile);
+        }
+    }
+  /**
      * 加载世界：复制模板地图 → 创建并加载 World
      */
     public void load() {

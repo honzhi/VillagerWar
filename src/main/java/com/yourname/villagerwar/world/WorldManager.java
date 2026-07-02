@@ -146,19 +146,38 @@ public class WorldManager {
      * 创建备战席世界实例（从 config 指定的模板创建）
      */
     public GameWorld createReservesSeat() {
-        String templateName = plugin.getConfig().getString("reserves_seat.teleport_to.map", "lobby");
+        String worldName = plugin.getConfig().getString("reserves_seat.teleport_to.map", "reserves_seat");
         seatCounter++;
-        String seatName = "reserves_seat" + seatCounter;
+        String seatInstanceName = "reserves_seat" + seatCounter;
 
-        GameWorld seat = new GameWorld(templateName, plugin);
-        seat.load();
-        if (!seat.isLoaded()) {
-            plugin.getLogger().severe("无法创建备战席实例: " + seatName);
-            seatCounter--;
-            return null;
+        // 检查世界是否已加载
+        World bukkitWorld = Bukkit.getWorld(worldName);
+        if (bukkitWorld == null) {
+            // 尝试从服务器根目录加载已存在的世界
+            File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
+            if (worldFolder.exists()) {
+                bukkitWorld = Bukkit.createWorld(new org.bukkit.WorldCreator(worldName));
+            }
         }
-        reservesSeats.put(seatName, seat);
-        plugin.getLogger().info("备战席实例 " + seatName + " 已创建（模板: " + templateName + "）");
+
+        if (bukkitWorld == null) {
+            // 尝试从模板创建
+            GameWorld seat = new GameWorld(worldName, plugin);
+            seat.load();
+            if (!seat.isLoaded()) {
+                plugin.getLogger().severe("无法创建备战席实例: " + seatInstanceName + "（模板 " + worldName + " 不存在）");
+                seatCounter--;
+                return null;
+            }
+            reservesSeats.put(seatInstanceName, seat);
+            plugin.getLogger().info("备战席实例 " + seatInstanceName + " 已从模板创建");
+            return seat;
+        }
+
+        // 使用已存在的世界
+        GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
+        reservesSeats.put(seatInstanceName, seat);
+        plugin.getLogger().info("备战席实例 " + seatInstanceName + " 使用已有世界: " + worldName);
         return seat;
     }
 
