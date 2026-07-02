@@ -39,8 +39,11 @@ public class PlayerMoveListener implements Listener {
         }
 
         switch (state) {
+            case WAITING:
+                // 备战席/大厅，允许移动
+                break;
             case PREPARING:
-                // Allow movement in reserves_seat / lobby
+                // 备战席/大厅，允许移动
                 break;
             case SKILL_SELECT:
             case SKILL_SHOW:

@@ -60,7 +60,7 @@ public class SetMapArgument implements SubCommand {
         }
 
         Game game = gameOpt.get();
-        if (game.getState() != GameState.PREPARING) {
+        if (game.getState() != GameState.WAITING) {
             sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始，无法修改地图");
             return true;
         }

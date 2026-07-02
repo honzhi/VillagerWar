@@ -31,7 +31,7 @@ public class Game {
     public Game(String gameName, GameWorld gameWorld, GameRule gameRule) {
         this.gameId = UUID.randomUUID();
         this.gameName = gameName;
-        this.state = GameState.PREPARING;
+        this.state = GameState.WAITING;
         this.gameWorld = gameWorld;
         this.gameRule = gameRule;
         this.gameTime = 0;

@@ -72,8 +72,8 @@ public class JoinArgument implements SubCommand {
 
         Game game = gameOpt.get();
 
-        // Check game state - only allow join if still in PREPARING
-        if (game.getState() != GameState.PREPARING) {
+        // Check game state
+        if (game.getState() != GameState.WAITING) {
             sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始或正在进行中，无法加入");
             return true;
         }
@@ -94,7 +94,7 @@ public class JoinArgument implements SubCommand {
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
             return plugin.getGameManager().getGames().stream()
-                    .filter(g -> g.getState() == GameState.PREPARING)
+                    .filter(g -> g.getState() == GameState.WAITING)
                     .map(Game::getGameName)
                     .filter(name -> name.toLowerCase().startsWith(partial))
                     .collect(Collectors.toList());

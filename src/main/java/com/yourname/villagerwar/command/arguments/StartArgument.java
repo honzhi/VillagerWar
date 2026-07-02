@@ -50,12 +50,18 @@ public class StartArgument implements SubCommand {
 
         Game game = gameOpt.get();
 
-        if (game.getState() != GameState.PREPARING) {
+        if (game.getState() != GameState.WAITING) {
             sender.sendMessage("§7[§6村民战争§7] §c游戏已经开始或正在进行中");
             return true;
         }
 
-        game.getController().transitionTo(GameState.SKILL_SELECT);
+        int minPlayers = game.getGameRule().getMinPlayers();
+        if (game.getPlayerCount() < minPlayers) {
+            sender.sendMessage("§7[§6村民战争§7] §c玩家人数不足，无法开始（" + game.getPlayerCount() + "/" + minPlayers + "）");
+            return true;
+        }
+
+        game.getController().transitionTo(GameState.PREPARING);
         game.getUiManager().getMessageManager().broadcastMessage("game.start");
         return true;
     }
