@@ -3,6 +3,7 @@ package com.yourname.villagerwar.config.holder;
 import org.bukkit.configuration.ConfigurationSection;
 
 public class PluginConfig {
+    private final boolean debug;
 
     private final String lobbyWorld;
     private final String defaultGameMode;
@@ -18,8 +19,10 @@ public class PluginConfig {
         this.autoSave = section.getBoolean("auto-save", true);
         this.autoSaveInterval = section.getInt("auto-save-interval", 300);
         this.database = new DatabaseConfig(section.getConfigurationSection("database"));
+        this.debug = section.getBoolean("debug", false);
     }
 
+    public boolean isDebug() { return debug; }
     public String getLobbyWorld() { return lobbyWorld; }
     public String getDefaultGameMode() { return defaultGameMode; }
     public String getLanguage() { return language; }
