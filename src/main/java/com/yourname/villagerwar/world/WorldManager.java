@@ -39,7 +39,7 @@ public class WorldManager {
 
         GameWorld gameWorld = new GameWorld(templateName, plugin);
         gameWorld.load();
-        activeWorlds.put(gameWorld.getWorldName(), gameWorld);
+        activeWorlds.put(templateName, gameWorld);
 
         plugin.getLogger().info("游戏世界 " + templateName + " 已创建");
         return gameWorld;

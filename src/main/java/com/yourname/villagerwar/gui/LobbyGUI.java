@@ -1,6 +1,8 @@
 package com.yourname.villagerwar.gui;
 
 import com.yourname.villagerwar.Game;
+import com.yourname.villagerwar.GameState;
+
 import com.yourname.villagerwar.VillagerWar;import com.yourname.villagerwar.GamePlayer;
 import com.yourname.villagerwar.config.holder.MapConfig;
 import com.yourname.villagerwar.GamePlayer;import com.yourname.villagerwar.config.rule.GameRule;import com.yourname.villagerwar.GamePlayer;
@@ -281,26 +283,24 @@ public class LobbyGUI {
             return;
         }
 
-        // 传送玩家到游戏世界出生点
-        game.getGameWorld().load();
+                // 加载游戏世界并传送到备战席 game.getGameWorld().load();
         VillagerWar.getInstance().getGameManager().joinGame(player, game);
-        game.getTeamManager().assignTeams();
-        game.getGameWorld().teleportPlayers(game);
-
+        player.teleport(game.getGameWorld().getBukkitWorld().getSpawnLocation());
+        player.setFallDistance(0);
         selectedMap.remove(player.getName());
 
-        // 通知
+        // 通知玩家
         player.sendTitle(MessageUtil.colorize("&a&l匹配成功"),
             MessageUtil.colorize("&7正在进入 " + game.getGameWorld().getWorldName()), 10, 40, 20);
 
         player.sendMessage(MessageUtil.colorize("&a已加入游戏！当前人数: &e" + game.getPlayerCount()));
 
-        // 检查是否满足开始条件
+        // 检查是否满足开始条件（人齐了开始游戏）
         GameRule gameRule = game.getGameRule();
         VillagerWar.getInstance().getLogger().info("[Debug] Players=" + game.getPlayerCount() + "/" + gameRule.getMinPlayers());
         if (game.getPlayerCount() >= gameRule.getMinPlayers()) {
-            // 人齐了，开始游戏
-            VillagerWar.getInstance().getLogger().info("[Debug] Min players reached! Starting game...");
+            VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！开始分配队伍并传送...");
+            // 通知所有玩家
             for (GamePlayer gp : game.getPlayers()) {
                 Player p = gp.getPlayer();
                 if (p != null) {
@@ -308,12 +308,16 @@ public class LobbyGUI {
                         MessageUtil.colorize("&7祝你好运！"), 10, 60, 20);
                 }
             }
-            game.getController().transitionTo(com.yourname.villagerwar.GameState.PREPARING);
+            // 通过状态机触发队伍分配和传送
+            game.setState(GameState.PREPARING);
+            game.getGameWorld().teleportPlayers(game);
+            game.setState(GameState.SKILL_SELECT);
         } else {
             int need = gameRule.getMinPlayers() - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要 &c" + need + " &e人"));
         }
     }
+
     public static String getOpenGUI(String playerName) { return openGUIMap.get(playerName); }
 
     public static void removePlayer(String playerName) {

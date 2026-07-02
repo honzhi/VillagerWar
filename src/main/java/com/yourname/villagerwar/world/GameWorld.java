@@ -83,6 +83,14 @@ public class GameWorld {
                 uidFile.delete();
                 plugin.getLogger().info("已删除 uid.dat，避免世界重复冲突");
             }
+            File paperWorldFile = new File(targetFolder, "paper-world.yml");
+            if (paperWorldFile.exists()) {
+                paperWorldFile.delete();
+            }
+            File sessionLockFile = new File(targetFolder, "session.lock");
+            if (sessionLockFile.exists()) {
+                sessionLockFile.delete();
+            }
             plugin.getLogger().info("模板 " + templateName + " 已复制到 " + worldName);
         } catch (IOException e) {
             plugin.getLogger().severe("复制模板地图失败: " + e.getMessage());
