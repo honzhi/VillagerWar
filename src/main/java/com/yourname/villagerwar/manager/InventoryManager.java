@@ -17,7 +17,7 @@ public class InventoryManager {
 
     private final VillagerWar plugin;
     private final Map<String, List<PresetItem>> presets = new HashMap<>();
-    private final Map<UUID, SavedInventory> snapshots = new ConcurrentHashMap<>();
+    private final Map<UUID, SavedInventory> snapshots = new ConcurrentHashMap<>();    private final Map<UUID, org.bukkit.Location> savedLocations = new ConcurrentHashMap<>();
 
     public InventoryManager(VillagerWar plugin) {
         this.plugin = plugin;
@@ -57,6 +57,7 @@ public class InventoryManager {
             inv.getArmorContents(),
             inv.getExtraContents()
         ));
+        savedLocations.put(player.getUniqueId(), player.getLocation().clone());
     }
 
     public void apply(Player player, String presetName) {
@@ -96,6 +97,13 @@ public class InventoryManager {
 
     public boolean hasSnapshot(Player player) {
         return snapshots.containsKey(player.getUniqueId());
+    }
+
+    public void restoreLocation(Player player) {
+        org.bukkit.Location loc = savedLocations.remove(player.getUniqueId());
+        if (loc != null) {
+            player.teleport(loc);
+        }
     }
 
     public Set<String> getPresetNames() {

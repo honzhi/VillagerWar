@@ -1,9 +1,9 @@
 package com.yourname.villagerwar.gui;
 
 import com.yourname.villagerwar.Game;
-import com.yourname.villagerwar.VillagerWar;
+import com.yourname.villagerwar.VillagerWar;import com.yourname.villagerwar.GamePlayer;
 import com.yourname.villagerwar.config.holder.MapConfig;
-import com.yourname.villagerwar.config.rule.GameRule;
+import com.yourname.villagerwar.GamePlayer;import com.yourname.villagerwar.config.rule.GameRule;import com.yourname.villagerwar.GamePlayer;
 import com.yourname.villagerwar.util.MessageUtil;
 import com.yourname.villagerwar.world.GameWorld;
 import org.bukkit.Bukkit;
@@ -251,93 +251,69 @@ public class LobbyGUI {
 
     // ========== Match Logic ==========
 
-    private static void handleMatch(Player player, String modeId) {
+        private static void handleMatch(Player player, String modeId) {
         String mapId = selectedMap.get(player.getName());
         if (mapId == null || mapId.isEmpty()) {
             player.sendMessage(MessageUtil.colorize("&c请先选择一张地图"));
             open(player, "map_select");
             return;
         }
+        player.closeInventory();
 
         VillagerWar.getInstance().getLogger().info("[Debug] handleMatch: map=" + mapId + " mode=" + modeId);
 
+        // 检查是否已在游戏中
         if (VillagerWar.getInstance().getGameManager().getGame(player).isPresent()) {
             player.sendMessage(MessageUtil.colorize("&c你已在游戏中"));
             return;
         }
 
-        // Save inventory and apply queuing preset
+        // 保存背包并应用备战席预设
         VillagerWar.getInstance().getInventoryManager().save(player);
-        VillagerWar.getInstance().getInventoryManager().apply(player, "queuing");
+        VillagerWar.getInstance().getInventoryManager().apply(player, "lobby");
 
-        String queueKey = mapId + ":" + modeId;
-        matchQueue.computeIfAbsent(queueKey, k -> Collections.synchronizedList(new ArrayList<>()));
-        List<Player> queue = matchQueue.get(queueKey);
-
-        if (queue.contains(player)) {
-            player.sendMessage(MessageUtil.colorize("&c你已在匹配队列中"));
+        // 查找或创建游戏
+        Game game = VillagerWar.getInstance().getGameManager().findOrCreateGame(mapId, modeId);
+        if (game == null) {
+            player.sendMessage(MessageUtil.colorize("&c游戏创建失败"));
+            VillagerWar.getInstance().getInventoryManager().clear(player);
+            VillagerWar.getInstance().getInventoryManager().restore(player);
             return;
         }
 
-        queue.add(player);
-        player.sendMessage(MessageUtil.colorize("&a已加入匹配队列（" + mapId + " - 模式 " + modeId + "）"));
+        // 传送玩家到游戏世界出生点
+        game.getGameWorld().load();
+        VillagerWar.getInstance().getGameManager().joinGame(player, game);
+        game.getTeamManager().assignTeams();
+        game.getGameWorld().teleportPlayers(game);
 
-        GameRule gameRule = VillagerWar.getInstance().getConfigManager().createGameRule(modeId);
-        int minPlayers = gameRule.getMinPlayers();
+        selectedMap.remove(player.getName());
 
-        if (queue.size() >= minPlayers) {
-            List<Player> matched = new ArrayList<>(queue);
-            queue.clear();
+        // 通知
+        player.sendTitle(MessageUtil.colorize("&a&l匹配成功"),
+            MessageUtil.colorize("&7正在进入 " + game.getGameWorld().getWorldName()), 10, 40, 20);
 
-            GameWorld gameWorld = VillagerWar.getInstance().getWorldManager().createWorld(mapId);
-            if (gameWorld == null) {
-                for (Player p : matched) {
-                    p.sendMessage(MessageUtil.colorize("&c地图加载失败"));
-                    VillagerWar.getInstance().getInventoryManager().clear(p);
-                    VillagerWar.getInstance().getInventoryManager().restore(p);
+        player.sendMessage(MessageUtil.colorize("&a已加入游戏！当前人数: &e" + game.getPlayerCount()));
+
+        // 检查是否满足开始条件
+        GameRule gameRule = game.getGameRule();
+        VillagerWar.getInstance().getLogger().info("[Debug] Players=" + game.getPlayerCount() + "/" + gameRule.getMinPlayers());
+        if (game.getPlayerCount() >= gameRule.getMinPlayers()) {
+            // 人齐了，开始游戏
+            VillagerWar.getInstance().getLogger().info("[Debug] Min players reached! Starting game...");
+            for (GamePlayer gp : game.getPlayers()) {
+                Player p = gp.getPlayer();
+                if (p != null) {
+                    p.sendTitle(MessageUtil.colorize("&a&l游戏开始！"),
+                        MessageUtil.colorize("&7祝你好运！"), 10, 60, 20);
                 }
-                return;
             }
-
-            Game game = VillagerWar.getInstance().getGameManager().createGame(mapId, gameWorld, gameRule);
-            if (game == null) {
-                for (Player p : matched) {
-                    p.sendMessage(MessageUtil.colorize("&c游戏创建失败"));
-                    VillagerWar.getInstance().getInventoryManager().clear(p);
-                    VillagerWar.getInstance().getInventoryManager().restore(p);
-                }
-                return;
-            }
-
-            for (Player p : matched) {
-                VillagerWar.getInstance().getGameManager().joinGame(p, game);
-                VillagerWar.getInstance().getInventoryManager().apply(p, "lobby");
-                selectedMap.remove(p.getName());
-            }
-
-            // debug
-            VillagerWar.getInstance().getLogger().info("[Debug] Setting PREPARING, assigning teams...");
-            game.setState(com.yourname.villagerwar.GameState.PREPARING);
-            game.getTeamManager().assignTeams();
-            VillagerWar.getInstance().getLogger().info("[Debug] Teleporting players...");
-            gameWorld.teleportPlayers(game);
-
-            for (Player p : matched) {
-                p.sendTitle(MessageUtil.colorize("&a&lMatch Found!"),
-                            MessageUtil.colorize("&7Entering game..."), 10, 40, 20);
-            }
-
-            Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
-                game.getController().transitionTo(com.yourname.villagerwar.GameState.SKILL_SELECT);
-            }, 60L);
+            game.getController().transitionTo(com.yourname.villagerwar.GameState.PREPARING);
         } else {
-            int need = minPlayers - queue.size();
+            int need = gameRule.getMinPlayers() - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要 &c" + need + " &e人"));
         }
     }
-
-    // ========== Utility ==========
-
     public static String getOpenGUI(String playerName) { return openGUIMap.get(playerName); }
 
     public static void removePlayer(String playerName) {

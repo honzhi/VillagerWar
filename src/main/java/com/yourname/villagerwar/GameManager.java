@@ -51,6 +51,32 @@ public class GameManager {
         playerGameMap.put(player.getUniqueId(), game.getGameId());
     }
 
+
+    /**
+     * 查找或创建游戏（备战席模式）
+     * 先找同地图同模式且处于WAITING状态的游戏，没有则新建
+     */
+    public Game findOrCreateGame(String mapId, String modeId) {
+        // 找已有的WAITING游戏
+        for (Game g : games.values()) {
+            if (g.getState() == GameState.WAITING &&
+                g.getGameName().equals(mapId + "_" + modeId)) {
+                return g;
+            }
+        }
+
+        // 创建新游戏
+        VillagerWar plugin = VillagerWar.getInstance();
+        com.yourname.villagerwar.world.GameWorld gameWorld = plugin.getWorldManager().createWorld(mapId);
+        if (gameWorld == null || !gameWorld.isLoaded()) {
+            plugin.getLogger().severe("[Debug] Failed to create world for " + mapId);
+            return null;
+        }
+
+        com.yourname.villagerwar.config.rule.GameRule gameRule = plugin.getConfigManager().createGameRule(modeId);
+        String gameName = mapId + "_" + modeId;
+        return createGame(gameName, gameWorld, gameRule);
+    }
     public void leaveGame(Player player) {
         UUID playerUuid = player.getUniqueId();
         UUID gameId = playerGameMap.remove(playerUuid);

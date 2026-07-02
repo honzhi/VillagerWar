@@ -40,9 +40,11 @@ public class PlayerInteractListener implements Listener {
             String name = (meta != null && meta.hasDisplayName()) ? meta.getDisplayName() : "";
 
             if (name.contains("退出匹配")) {
-                // 退出匹配
+                // 退出匹配 - 传送回原位并恢复背包
+                plugin.getInventoryManager().restoreLocation(player);
                 plugin.getInventoryManager().clear(player);
                 plugin.getInventoryManager().restore(player);
+                plugin.getGameManager().leaveGame(player);
                 com.yourname.villagerwar.gui.LobbyGUI.removePlayer(player.getName());
                 player.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&',
                     "&7[&6村民战争&7] &e你已退出匹配队列"));
