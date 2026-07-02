@@ -305,7 +305,7 @@ public class LobbyGUI {
 
         // 通知玩家
         player.sendTitle(MessageUtil.colorize("&a&l匹配成功"),
-            MessageUtil.colorize("&7正在进入 " + game.getGameWorld().getWorldName()), 10, 40, 20);
+            MessageUtil.colorize("&7正在进入 " + game.getMapId()), 10, 40, 20);
 
         player.sendMessage(MessageUtil.colorize("&a已加入游戏！当前人数: &e" + game.getPlayerCount()));
 

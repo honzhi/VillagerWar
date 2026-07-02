@@ -155,7 +155,7 @@ public class WorldManager {
         if (bukkitWorld != null) {
             plugin.getLogger().info("[Debug] 备战席世界 " + worldName + " 已加载，直接使用");
             GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
-            reservesSeats.put(seatInstanceName, seat);
+            reservesSeats.put(worldName, seat);
             return seat;
         }
 
@@ -163,12 +163,20 @@ public class WorldManager {
         File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
         plugin.getLogger().info("[Debug] 检查世界文件夹: " + worldFolder.getAbsolutePath() + " 存在=" + worldFolder.exists());
         if (worldFolder.exists() && new File(worldFolder, "level.dat").exists()) {
+            // 删除可能的 uid.dat 和 paper-world.yml 避免重复世界冲突
+            File uidFile = new File(worldFolder, "uid.dat");
+            if (uidFile.exists()) { uidFile.delete(); plugin.getLogger().info("[Debug] 已删除 uid.dat"); }
+            File paperWorldFile = new File(worldFolder, "paper-world.yml");
+            if (paperWorldFile.exists()) { paperWorldFile.delete(); }
+            File sessionLockFile = new File(worldFolder, "session.lock");
+            if (sessionLockFile.exists()) { sessionLockFile.delete(); }
+
             plugin.getLogger().info("[Debug] 加载已有世界: " + worldName);
             bukkitWorld = Bukkit.createWorld(new org.bukkit.WorldCreator(worldName));
             if (bukkitWorld != null) {
                 plugin.getLogger().info("[Debug] 世界 " + worldName + " 加载成功");
                 GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
-                reservesSeats.put(seatInstanceName, seat);
+                reservesSeats.put(worldName, seat);
                 return seat;
             } else {
                 plugin.getLogger().severe("[Debug] 世界 " + worldName + " 加载失败（Bukkit.createWorld返回null）");
