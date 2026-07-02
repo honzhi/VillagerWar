@@ -33,7 +33,7 @@ public class LobbyGUI {
     public static void open(Player player, String guiName, String mapId) {
         File guiFile = new File(VillagerWar.getInstance().getDataFolder(), "game_gui/" + guiName + ".yml");
         if (!guiFile.exists()) {
-            player.sendMessage(MessageUtil.colorize("&cGUI file not found: " + guiName));
+            player.sendMessage(MessageUtil.colorize("&cGUI文件不存在: " + guiName));
             return;
         }
 
@@ -254,7 +254,7 @@ public class LobbyGUI {
     private static void handleMatch(Player player) {
         String mapId = selectedMap.get(player.getName());
         if (mapId == null || mapId.isEmpty()) {
-            player.sendMessage(MessageUtil.colorize("&cPlease select a map first"));
+            player.sendMessage(MessageUtil.colorize("&c请先选择一张地图"));
             open(player, "map_select");
             return;
         }
@@ -262,7 +262,7 @@ public class LobbyGUI {
         String modeId = "CLASSIC";
 
         if (VillagerWar.getInstance().getGameManager().getGame(player).isPresent()) {
-            player.sendMessage(MessageUtil.colorize("&cYou are already in a game"));
+            player.sendMessage(MessageUtil.colorize("&c你已在游戏中"));
             return;
         }
 
@@ -275,12 +275,12 @@ public class LobbyGUI {
         List<Player> queue = matchQueue.get(queueKey);
 
         if (queue.contains(player)) {
-            player.sendMessage(MessageUtil.colorize("&cYou are already in queue"));
+            player.sendMessage(MessageUtil.colorize("&c你已在匹配队列中"));
             return;
         }
 
         queue.add(player);
-        player.sendMessage(MessageUtil.colorize("&aJoined queue (" + mapId + " - " + modeId + ")"));
+        player.sendMessage(MessageUtil.colorize("&a已加入匹配队列（" + mapId + " - 模式 " + modeId + "）"));
 
         GameRule gameRule = VillagerWar.getInstance().getConfigManager().createGameRule(modeId);
         int minPlayers = gameRule.getMinPlayers();
@@ -292,7 +292,7 @@ public class LobbyGUI {
             GameWorld gameWorld = VillagerWar.getInstance().getWorldManager().createWorld(mapId);
             if (gameWorld == null) {
                 for (Player p : matched) {
-                    p.sendMessage(MessageUtil.colorize("&cFailed to load map"));
+                    p.sendMessage(MessageUtil.colorize("&c地图加载失败"));
                     VillagerWar.getInstance().getInventoryManager().clear(p);
                     VillagerWar.getInstance().getInventoryManager().restore(p);
                 }
@@ -302,7 +302,7 @@ public class LobbyGUI {
             Game game = VillagerWar.getInstance().getGameManager().createGame(mapId, gameWorld, gameRule);
             if (game == null) {
                 for (Player p : matched) {
-                    p.sendMessage(MessageUtil.colorize("&cFailed to create game"));
+                    p.sendMessage(MessageUtil.colorize("&c游戏创建失败"));
                     VillagerWar.getInstance().getInventoryManager().clear(p);
                     VillagerWar.getInstance().getInventoryManager().restore(p);
                 }
@@ -325,7 +325,7 @@ public class LobbyGUI {
             }, 60L);
         } else {
             int need = minPlayers - queue.size();
-            player.sendMessage(MessageUtil.colorize("&eWaiting for more players... Need &c" + need + " &emore"));
+            player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要 &c" + need + " &e人"));
         }
     }
 
