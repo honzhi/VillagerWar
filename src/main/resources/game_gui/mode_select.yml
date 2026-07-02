@@ -1,7 +1,5 @@
-# ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 # 大厅 GUI：模式选择
 # 选择地图后进入，选择游戏模式
-# ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 title: "&8┃&6{map_name} &8- &e选择模式 &8┃"
 layout:
@@ -68,11 +66,27 @@ modes:
   1:
     material: knowledge_book
     display_name: "标准模式"
+    mode: standard            # 对应 game_modes.yml 中的 preset ID
     lore:
       - ""
       - " &7时长: &f{max_time}秒"
       - " &7复活: &f{respawn_time}秒"
       - " &7胜利: &f{victory_mode}"
+      - ""
+      - "&e点击开始匹配"
+    click:
+      - "sound: ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+      - "message: &a正在匹配..."
+      - "match"
+  2:
+    material: blaze_powder
+    display_name: "极速模式"
+    mode: fast                 # 对应 game_modes.yml 中的 preset ID
+    lore:
+      - ""
+      - " &7时长: &f300秒"
+      - " &7复活: &f3秒"
+      - " &7胜利: &f灭队"
       - ""
       - "&e点击开始匹配"
     click:

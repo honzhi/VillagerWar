@@ -244,14 +244,14 @@ public class LobbyGUI {
         }
 
         if (action.equals("match")) {
-            handleMatch(player);
+            String modeId = itemSection.getString("mode", "standard"); handleMatch(player, modeId);
             return;
         }
     }
 
     // ========== Match Logic ==========
 
-    private static void handleMatch(Player player) {
+    private static void handleMatch(Player player, String modeId) {
         String mapId = selectedMap.get(player.getName());
         if (mapId == null || mapId.isEmpty()) {
             player.sendMessage(MessageUtil.colorize("&c请先选择一张地图"));
@@ -259,7 +259,7 @@ public class LobbyGUI {
             return;
         }
 
-        String modeId = "CLASSIC";
+        VillagerWar.getInstance().getLogger().info("[Debug] handleMatch: map=" + mapId + " mode=" + modeId);
 
         if (VillagerWar.getInstance().getGameManager().getGame(player).isPresent()) {
             player.sendMessage(MessageUtil.colorize("&c你已在游戏中"));
