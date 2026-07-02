@@ -32,7 +32,7 @@ public class GameManager {
     }
 
     public Optional<Game> getGame(Player player) {
-        return getGame(player.getUniqueId());
+        return getGameByPlayer(player.getUniqueId());
     }
 
     public Optional<Game> getGameByPlayer(UUID playerUuid) {

@@ -42,8 +42,14 @@ public class GUIListener implements Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (event.getPlayer() instanceof Player) {
-            LobbyGUI.removePlayer(event.getPlayer().getName());
-            ShopGUI.close(event.getPlayer().getName());
+            String playerName = event.getPlayer().getName();
+            // 仅当玩家确实打开了插件GUI时才清理
+            if (LobbyGUI.getOpenGUI(playerName) != null) {
+                LobbyGUI.removePlayer(playerName);
+            }
+            if (ShopGUI.isOpen((Player) event.getPlayer())) {
+                ShopGUI.close(playerName);
+            }
         }
     }
 }

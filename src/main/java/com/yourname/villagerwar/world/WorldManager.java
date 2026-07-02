@@ -32,14 +32,9 @@ public class WorldManager {
      * @return GameWorld 实例
      */
     public GameWorld createGameWorld(String templateName) {
-        if (activeWorlds.containsKey(templateName)) {
-            plugin.getLogger().warning("游戏世界 " + templateName + " 已存在，返回现有实例");
-            return activeWorlds.get(templateName);
-        }
-
         GameWorld gameWorld = new GameWorld(templateName, plugin);
         gameWorld.load();
-        activeWorlds.put(templateName, gameWorld);
+        activeWorlds.put(gameWorld.getWorldName(), gameWorld);
 
         plugin.getLogger().info("游戏世界 " + templateName + " 已创建");
         return gameWorld;
@@ -62,7 +57,7 @@ public class WorldManager {
         if (gw == null) return;
 
         gw.unload();
-        activeWorlds.remove(gw.getTemplateName());
+        activeWorlds.remove(gw.getWorldName());
 
         // 删除世界文件夹
         World bukkitWorld = gw.getBukkitWorld();
