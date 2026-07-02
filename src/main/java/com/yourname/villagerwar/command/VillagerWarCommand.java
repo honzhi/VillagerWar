@@ -30,6 +30,7 @@ public class VillagerWarCommand implements CommandExecutor, TabCompleter {
         register(new SetMapArgument(plugin));
         register(new GuiArgument(plugin));
         register(new MapArgument(plugin));
+        register(new ReloadArgument(plugin));
     }
 
     private void register(SubCommand subCommand) {
@@ -48,7 +49,7 @@ public class VillagerWarCommand implements CommandExecutor, TabCompleter {
         SubCommand sub = subCommands.get(subName);
 
         if (sub == null) {
-            sender.sendMessage("§7[§6村民战争§7] §c未知子命令: §e" + subName);
+            sender.sendMessage("§7[§6村民战争§7] §c未知子命令 §e" + subName);
             sendHelp(sender);
             return true;
         }

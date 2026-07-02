@@ -22,9 +22,14 @@ public class VillagerWar extends JavaPlugin {
 
         configManager.loadAll();
 
-        // ─── Debug: MythicMobs 检测 ───
+        // ─── Debug: 模式提示（放在最前） ───
         PluginConfig pc = configManager.getPluginConfig();
         boolean debug = pc.isDebug();
+        if (debug) {
+            getLogger().info("Debug 模式已启用");
+        }
+
+        // ─── Debug: MythicMobs 检测 ───
         if (MMBridge.isMythicMobsLoaded()) {
             getLogger().info("[MMBridge] MythicMobs 插件已就绪");
         } else {
@@ -45,10 +50,6 @@ public class VillagerWar extends JavaPlugin {
                     }
                 }
             }
-        }
-
-        if (debug) {
-            getLogger().info("Debug 模式已启用");
         }
 
         registerCommands();
