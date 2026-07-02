@@ -298,21 +298,35 @@ public class LobbyGUI {
         // 检查是否满足开始条件（人齐了开始游戏）
         GameRule gameRule = game.getGameRule();
         VillagerWar.getInstance().getLogger().info("[Debug] Players=" + game.getPlayerCount() + "/" + gameRule.getMinPlayers());
-        if (game.getPlayerCount() >= gameRule.getMinPlayers()) {
-            VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！开始分配队伍并传送...");
-            // 通知所有玩家
+                if (game.getPlayerCount() >= gameRule.getMinPlayers()) {
+            VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！10秒后开始游戏...");
+            // 通知所有玩家准备
             for (GamePlayer gp : game.getPlayers()) {
                 Player p = gp.getPlayer();
                 if (p != null) {
-                    p.sendTitle(MessageUtil.colorize("&a&l游戏开始！"),
-                        MessageUtil.colorize("&7祝你好运！"), 10, 60, 20);
+                    p.sendTitle(MessageUtil.colorize("&a&l玩家人数已满"),
+                        MessageUtil.colorize("&710秒后游戏开始..."), 10, 60, 20);
                 }
             }
-            // 通过状态机触发队伍分配和传送
-            game.setState(GameState.PREPARING);
-            game.getGameWorld().teleportPlayers(game);
-            game.setState(GameState.SKILL_SELECT);
-        } else {
+
+            // 倒计时后再分配队伍和传送，让玩家先留在备战席
+            Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                // 检查游戏是否还存在
+                Optional<Game> gameOpt = VillagerWar.getInstance().getGameManager().getGame(game.getGameId());
+                if (gameOpt.isEmpty() || game.getState() == GameState.PLAYING) return;
+
+                VillagerWar.getInstance().getLogger().info("[Debug] 倒计时结束，开始分配队伍并传送...");
+                for (GamePlayer gp : game.getPlayers()) {
+                    Player p = gp.getPlayer();
+                    if (p != null) {
+                        p.sendTitle(MessageUtil.colorize("&a&l游戏开始！"),
+                            MessageUtil.colorize("&7祝你好运！"), 10, 60, 20);
+                    }
+                }
+                game.setState(GameState.PREPARING);
+                game.getGameWorld().teleportPlayers(game);
+                game.setState(GameState.PLAYING);
+            }, 200L); // 10秒 = 200 tick        } else {
             int need = gameRule.getMinPlayers() - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要 &c" + need + " &e人"));
         }
