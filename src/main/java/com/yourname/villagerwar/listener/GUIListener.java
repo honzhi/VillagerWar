@@ -1,8 +1,7 @@
 package com.yourname.villagerwar.listener;
 
 import com.yourname.villagerwar.VillagerWar;
-import com.yourname.villagerwar.shop.GameGUI;
-import com.yourname.villagerwar.shop.ShopGUI;
+import com.yourname.villagerwar.gui.LobbyGUI;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,24 +21,22 @@ public class GUIListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
 
-        // 检查是否在 GameGUI 中
-        String guiName = GameGUI.getOpenGUI(player.getName());
-        if (guiName != null) {
-            event.setCancelled(true); // 禁止拿物品
+        // 只处理大厅 GUI (game_gui/)
+        String guiName = LobbyGUI.getOpenGUI(player.getName());
+        if (guiName == null) return;
 
-            if (event.getCurrentItem() == null) return;
-            String title = event.getView().getTitle();
+        event.setCancelled(true);
+        if (event.getCurrentItem() == null) return;
 
-            // 处理点击动作
-            int slot = event.getSlot();
-            GameGUI.handleClick(player, guiName, slot, title, event.getCurrentItem());
-        }
+        String title = event.getView().getTitle();
+        int slot = event.getSlot();
+        LobbyGUI.handleClick(player, guiName, slot, title, event.getCurrentItem());
     }
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (event.getPlayer() instanceof Player) {
-            GameGUI.removePlayer(event.getPlayer().getName());
+            LobbyGUI.removePlayer(event.getPlayer().getName());
         }
     }
 }
