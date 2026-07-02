@@ -13,15 +13,10 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 背包管理器
- * 负责：保存快照、应用预设、清空、归还
- */
 public class InventoryManager {
 
     private final VillagerWar plugin;
     private final Map<String, List<PresetItem>> presets = new HashMap<>();
-    // 玩家背包快照
     private final Map<UUID, SavedInventory> snapshots = new ConcurrentHashMap<>();
 
     public InventoryManager(VillagerWar plugin) {
@@ -29,8 +24,7 @@ public class InventoryManager {
         loadPresets();
     }
 
-    // ========== 配置加载 ==========
-
+    @SuppressWarnings("unchecked")
     public void loadPresets() {
         presets.clear();
         File file = new File(plugin.getDataFolder(), "inventory_presets.yml");
@@ -43,21 +37,19 @@ public class InventoryManager {
         if (presetsSection == null) return;
 
         for (String key : presetsSection.getKeys(false)) {
+            List<?> rawList = presetsSection.getList(key);
+            if (rawList == null || rawList.isEmpty()) continue;
+
             List<PresetItem> items = new ArrayList<>();
-            for (String itemKey : presetsSection.getConfigurationSection(key).getKeys(false)) {
-                ConfigurationSection itemSection = presetsSection.getConfigurationSection(key + "." + itemKey);
-                if (itemSection == null) continue;
-                items.add(new PresetItem(itemSection));
+            for (Object obj : rawList) {
+                if (obj instanceof Map) {
+                    items.add(new PresetItem((Map<String, Object>) obj));
+                }
             }
             presets.put(key.toLowerCase(), items);
         }
     }
 
-    // ========== 核心方法 ==========
-
-    /**
-     * 保存玩家背包快照
-     */
     public void save(Player player) {
         PlayerInventory inv = player.getInventory();
         snapshots.put(player.getUniqueId(), new SavedInventory(
@@ -67,9 +59,6 @@ public class InventoryManager {
         ));
     }
 
-    /**
-     * 应用指定预设（清空 + 给物品）
-     */
     public void apply(Player player, String presetName) {
         clear(player);
         List<PresetItem> items = presets.get(presetName.toLowerCase());
@@ -87,9 +76,6 @@ public class InventoryManager {
         }
     }
 
-    /**
-     * 清空玩家背包（含盔甲、副手）
-     */
     public void clear(Player player) {
         PlayerInventory inv = player.getInventory();
         inv.clear();
@@ -97,9 +83,6 @@ public class InventoryManager {
         inv.setExtraContents(new ItemStack[1]);
     }
 
-    /**
-     * 归还背包快照
-     */
     public void restore(Player player) {
         UUID uuid = player.getUniqueId();
         SavedInventory saved = snapshots.remove(uuid);
@@ -111,21 +94,13 @@ public class InventoryManager {
         inv.setExtraContents(saved.extra);
     }
 
-    /**
-     * 检查玩家是否有快照
-     */
     public boolean hasSnapshot(Player player) {
         return snapshots.containsKey(player.getUniqueId());
     }
 
-    /**
-     * 获取当前预设列表（用于调试）
-     */
     public Set<String> getPresetNames() {
         return presets.keySet();
     }
-
-    // ========== 内部类 ==========
 
     private static class PresetItem {
         private final Material material;
@@ -134,13 +109,26 @@ public class InventoryManager {
         private final String displayName;
         private final List<String> lore;
 
-        PresetItem(ConfigurationSection section) {
-            String matName = section.getString("material", "STONE");
+        PresetItem(Map<String, Object> map) {
+            String matName = (String) map.getOrDefault("material", "STONE");
             this.material = Material.getMaterial(matName.toUpperCase());
-            this.slot = section.getInt("slot", -1);
-            this.amount = section.getInt("amount", 1);
-            this.displayName = section.getString("display_name", "");
-            this.lore = section.getStringList("lore");
+            this.slot = toInt(map.getOrDefault("slot", -1));
+            this.amount = toInt(map.getOrDefault("amount", 1));
+            this.displayName = (String) map.getOrDefault("display_name", "");
+            Object loreObj = map.get("lore");
+            if (loreObj instanceof List) {
+                this.lore = new ArrayList<>();
+                for (Object line : (List<?>) loreObj) {
+                    this.lore.add(line.toString());
+                }
+            } else {
+                this.lore = new ArrayList<>();
+            }
+        }
+
+        private int toInt(Object value) {
+            if (value instanceof Number) return ((Number) value).intValue();
+            try { return Integer.parseInt(value.toString()); } catch (Exception e) { return 0; }
         }
 
         ItemStack build() {
