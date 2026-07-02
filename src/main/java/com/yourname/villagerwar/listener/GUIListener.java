@@ -2,6 +2,7 @@ package com.yourname.villagerwar.listener;
 
 import com.yourname.villagerwar.VillagerWar;
 import com.yourname.villagerwar.gui.LobbyGUI;
+import com.yourname.villagerwar.shop.ShopGUI;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,22 +22,28 @@ public class GUIListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
 
-        // 只处理大厅 GUI (game_gui/)
+        // 大厅 GUI
         String guiName = LobbyGUI.getOpenGUI(player.getName());
-        if (guiName == null) return;
+        if (guiName != null) {
+            event.setCancelled(true);
+            if (event.getCurrentItem() == null) return;
+            String title = event.getView().getTitle();
+            int slot = event.getSlot();
+            LobbyGUI.handleClick(player, guiName, slot, title, event.getCurrentItem());
+            return;
+        }
 
-        event.setCancelled(true);
-        if (event.getCurrentItem() == null) return;
-
-        String title = event.getView().getTitle();
-        int slot = event.getSlot();
-        LobbyGUI.handleClick(player, guiName, slot, title, event.getCurrentItem());
+        // 商店 GUI
+        if (ShopGUI.isOpen(player)) {
+            ShopGUI.handleClick(event);
+        }
     }
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (event.getPlayer() instanceof Player) {
             LobbyGUI.removePlayer(event.getPlayer().getName());
+            ShopGUI.close(event.getPlayer().getName());
         }
     }
 }

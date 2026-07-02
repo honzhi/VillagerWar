@@ -23,13 +23,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 商店 GUI
- * 读取 shop/*.yml 配置，构建可交互的物品商店界面
+ * 鍟嗗簵 GUI
+ * 璇诲彇 shop/*.yml 閰嶇疆锛屾瀯寤哄彲浜や簰鐨勭墿鍝佸晢搴楃晫闈?
  */
 public class ShopGUI {
 
     private static final Map<String, ShopGUI> shopCache = new HashMap<>();
-    private static final Map<String, String> openShopMap = new HashMap<>(); // PlayerName → ShopName
+    private static final Map<String, String> openShopMap = new HashMap<>(); // PlayerName 鈫?ShopName
 
     private final String name;
     private final String title;
@@ -38,8 +38,8 @@ public class ShopGUI {
     private final int rows;
 
     /**
-     * 从配置文件加载商店
-     * @param file shop/*.yml 文件
+     * 浠庨厤缃枃浠跺姞杞藉晢搴?
+     * @param file shop/*.yml 鏂囦欢
      */
     public ShopGUI() {
         this(new java.io.File(VillagerWar.getInstance().getDataFolder(), "shop/defaults.yml"));
@@ -47,14 +47,14 @@ public class ShopGUI {
     public ShopGUI(File file) {
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         this.name = file.getName().replace(".yml", "");
-        this.title = MessageUtil.colorize(config.getString("title", "&6商店"));
+        this.title = MessageUtil.colorize(config.getString("title", "&6鍟嗗簵"));
         this.layout = config.getStringList("layout");
         this.items = new HashMap<>();
 
-        // 解析 rows: layout 的行数决定
+        // 瑙ｆ瀽 rows: layout 鐨勮鏁板喅瀹?
         this.rows = layout.size();
 
-        // 解析 base 段
+        // 瑙ｆ瀽 base 娈?
         ConfigurationSection baseSection = config.getConfigurationSection("base");
         if (baseSection != null) {
             for (String key : baseSection.getKeys(false)) {
@@ -67,12 +67,12 @@ public class ShopGUI {
     }
 
     /**
-     * 打开商店 GUI（静态入口）
-     * @param player   玩家
-     * @param shopName 商店名称（不带 .yml）
+     * 鎵撳紑鍟嗗簵 GUI锛堥潤鎬佸叆鍙ｏ級
+     * @param player   鐜╁
+     * @param shopName 鍟嗗簵鍚嶇О锛堜笉甯?.yml锛?
      */
     public static void open(Player player, String shopName) {
-        // 从缓存或文件加载商店
+        // 浠庣紦瀛樻垨鏂囦欢鍔犺浇鍟嗗簵
         ShopGUI shop = shopCache.get(shopName);
         if (shop == null) {
             File shopFile = new File(VillagerWar.getInstance().getDataFolder(), "shop/" + shopName + ".yml");
@@ -90,19 +90,19 @@ public class ShopGUI {
     }
 
     /**
-     * 构建商店物品栏
+     * 鏋勫缓鍟嗗簵鐗╁搧鏍?
      */
     private Inventory buildInventory(Player player) {
         Inventory inv = Bukkit.createInventory(null, rows * 9, title);
 
-        // 按 layout 布局放置物品
+        // 鎸?layout 甯冨眬鏀剧疆鐗╁搧
         for (int row = 0; row < layout.size(); row++) {
             String line = layout.get(row);
             for (int col = 0; col < line.length() && col < 9; col++) {
                 char c = line.charAt(col);
                 String key = String.valueOf(c).toUpperCase();
 
-                if (key.equals("0")) continue; // 空位
+                if (key.equals("0")) continue; // 绌轰綅
 
                 ShopItem shopItem = items.get(key);
                 if (shopItem == null) continue;
@@ -117,7 +117,7 @@ public class ShopGUI {
     }
 
     /**
-     * 创建展示物品
+     * 鍒涘缓灞曠ず鐗╁搧
      */
     private ItemStack createDisplayItem(ShopItem shopItem, Player player) {
         ItemStack item = new ItemStack(shopItem.getMaterial(), shopItem.getAmount());
@@ -131,7 +131,7 @@ public class ShopGUI {
                 coloredLore.add(MessageUtil.colorize(line));
             }
             if (shopItem.getValue() > 0) {
-                coloredLore.add(MessageUtil.colorize("&7价格: &6" + shopItem.getValue() + " 金币"));
+                coloredLore.add(MessageUtil.colorize("&7浠锋牸: &6" + shopItem.getValue() + " 閲戝竵"));
             }
             meta.setLore(coloredLore);
             item.setItemMeta(meta);
@@ -140,8 +140,8 @@ public class ShopGUI {
     }
 
     /**
-     * 处理点击事件（由监听器调用）
-     * @param event 物品栏点击事件
+     * 澶勭悊鐐瑰嚮浜嬩欢锛堢敱鐩戝惉鍣ㄨ皟鐢級
+     * @param event 鐗╁搧鏍忕偣鍑讳簨浠?
      */
     public static void handleClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
@@ -157,7 +157,7 @@ public class ShopGUI {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= shop.rows * 9) return;
 
-        // 计算 layout 中对应的键
+        // 璁＄畻 layout 涓搴旂殑閿?
         int row = slot / 9;
         int col = slot % 9;
         if (row >= shop.layout.size()) return;
@@ -172,7 +172,7 @@ public class ShopGUI {
         ShopItem shopItem = shop.items.get(key);
         if (shopItem == null) return;
 
-        // 获取玩家所属游戏
+        // 鑾峰彇鐜╁鎵€灞炴父鎴?
         Game game = VillagerWar.getInstance().getGameManager().getGame(player).orElse(null);
         GamePlayer gp = (game != null) ? game.getPlayer(player.getUniqueId()) : null;
 
@@ -180,11 +180,11 @@ public class ShopGUI {
         if (gp != null) {
             success = shopItem.checkConditions(gp, game.getGameTime() / 20);
         } else {
-            // 不在游戏中时仅检查 value=0
+            // 涓嶅湪娓告垙涓椂浠呮鏌?value=0
             success = shopItem.getValue() == 0;
         }
 
-        // 扣除金币
+        // 鎵ｉ櫎閲戝竵
         if (success && gp != null && shopItem.getValue() > 0) {
             if (gp.takeGold(shopItem.getValue())) {
                 success = true;
@@ -193,15 +193,15 @@ public class ShopGUI {
             }
         }
 
-        // 执行动作链
+        // 鎵ц鍔ㄤ綔閾?
         List<String> actions = success ? shopItem.getBuyActions().getSuccess()
                                        : shopItem.getBuyActions().getFailure();
         executeActions(player, actions, shop, shopItem);
     }
 
     /**
-     * 执行动作链
-     * 支持的动作类型: command, title, message, sound, close, open
+     * 鎵ц鍔ㄤ綔閾?
+     * 鏀寔鐨勫姩浣滅被鍨? command, title, message, sound, close, open
      */
     private static void executeActions(Player player, List<String> actions, ShopGUI currentShop, ShopItem item) {
         if (actions == null) return;
@@ -222,7 +222,7 @@ public class ShopGUI {
                     int fadeIn = 20, stay = 60, fadeOut = 20;
                     int index = 0;
 
-                    // 尝试解析时间和标题
+                    // 灏濊瘯瑙ｆ瀽鏃堕棿鍜屾爣棰?
                     if (parts.length >= 3) {
                         try {
                             fadeIn = Integer.parseInt(parts[parts.length - 3]);
@@ -268,7 +268,7 @@ public class ShopGUI {
 
             } else if (action.startsWith("open:")) {
                 String targetShop = action.substring("open:".length()).trim();
-                // 关闭当前商店，打开目标商店
+                // 鍏抽棴褰撳墠鍟嗗簵锛屾墦寮€鐩爣鍟嗗簵
                 player.closeInventory();
                 openShopMap.remove(player.getName());
                 open(player, targetShop);
@@ -278,7 +278,7 @@ public class ShopGUI {
                 openShopMap.remove(player.getName());
 
             } else if (action.startsWith("close")) {
-                // 兼容 "close" 的各种写法
+                // 鍏煎 "close" 鐨勫悇绉嶅啓娉?
                 player.closeInventory();
                 openShopMap.remove(player.getName());
             }
@@ -286,21 +286,44 @@ public class ShopGUI {
     }
 
     /**
-     * 清除玩家的商店打开记录（用于退出游戏等）
+     * 娓呴櫎鐜╁鐨勫晢搴楁墦寮€璁板綍锛堢敤浜庨€€鍑烘父鎴忕瓑锛?
      */
     public static void clearPlayer(Player player) {
         openShopMap.remove(player.getName());
     }
 
     /**
-     * 清除所有缓存（reload 时调用）
+     * 娓呴櫎鎵€鏈夌紦瀛橈紙reload 鏃惰皟鐢級
      */
     public static void clearCache() {
         shopCache.clear();
         openShopMap.clear();
     }
 
-    // ─── Getters ───
+    /**
+     * 检查玩家是否打开了商店
+     */
+    public static boolean isOpen(Player player) {
+        return openShopMap.containsKey(player.getName());
+    }
+
+    /**
+     * 获取玩家当前打开的商店实例
+     */
+    public static ShopGUI getOpenShop(Player player) {
+        String shopName = openShopMap.get(player.getName());
+        if (shopName == null) return null;
+        return shopCache.get(shopName);
+    }
+
+    /**
+     * 关闭玩家的商店界面
+     */
+    public static void close(String playerName) {
+        openShopMap.remove(playerName);
+    }
+
+    // 鈹€鈹€鈹€ Getters 鈹€鈹€鈹€
 
     public String getName() { return name; }
     public String getTitle() { return title; }
