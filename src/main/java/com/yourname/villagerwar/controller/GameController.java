@@ -38,8 +38,6 @@ public class GameController {
 
     public void onStateChange(GameState newState) {
         switch (newState) {
-            case WAITING:
-                break;
             case PREPARING:
                 game.getTeamManager().assignTeams();
                 break;

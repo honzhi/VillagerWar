@@ -39,7 +39,6 @@ public class PlayerMoveListener implements Listener {
         }
 
         switch (state) {
-            case WAITING:
             case PREPARING:
             case SKILL_SELECT:
             case SKILL_SHOW:

@@ -54,12 +54,12 @@ public class GameManager {
 
     /**
      * 查找或创建游戏（备战席模式）
-     * 先找同地图同模式且处于WAITING状态的游戏，没有则新建
+     * 先找同地图同模式且处于PREPARING状态的游戏，没有则新建
      */
     public Game findOrCreateGame(String mapId, String modeId) {
-        // 找已有的WAITING游戏
+        // 找已有的PREPARING游戏
         for (Game g : games.values()) {
-            if (g.getState() == GameState.WAITING &&
+            if (g.getState() == GameState.PREPARING &&
                 g.getGameName().equals(mapId + "_" + modeId)) {
                 return g;
             }
