@@ -3,6 +3,7 @@ package com.yourname.villagerwar.world;
 import com.yourname.villagerwar.VillagerWar;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -143,49 +144,76 @@ public class WorldManager {
     private int seatCounter = 0;
 
     /**
-     * 创建备战席世界实例（从 config 指定的模板创建）
+     * 创建备战席世界实例（从 maps/ 目录加载）
      */
-        public GameWorld createReservesSeat() {
-        String worldName = plugin.getConfig().getString("reserves_seat.teleport_to.map", "reserves_seat");
+    public GameWorld createReservesSeat() {
+        String templateName = plugin.getConfig().getString("reserves_seat.teleport_to.map", "reserves_seat");
         seatCounter++;
         String seatInstanceName = "reserves_seat" + seatCounter;
 
-        // 检查世界是否已加载
-        World bukkitWorld = Bukkit.getWorld(worldName);
+        // 检查世界是否已加载（通过实例名或模板名）
+        World bukkitWorld = Bukkit.getWorld(seatInstanceName);
         if (bukkitWorld != null) {
-            plugin.getLogger().info("[Debug] 备战席世界 " + worldName + " 已加载，直接使用");
-            GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
-            reservesSeats.put(worldName, seat);
+            plugin.getLogger().info("[Debug] 备战席 " + seatInstanceName + " 已加载，直接使用");
+            GameWorld seat = new GameWorld(templateName, plugin, bukkitWorld);
+            reservesSeats.put(seatInstanceName, seat);
             return seat;
         }
 
-        // 尝试从服务器根目录加载世界
-        File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
-        plugin.getLogger().info("[Debug] 检查世界文件夹: " + worldFolder.getAbsolutePath() + " 存在=" + worldFolder.exists());
-        if (worldFolder.exists() && new File(worldFolder, "level.dat").exists()) {
-            // 删除可能的 uid.dat 和 paper-world.yml 避免重复世界冲突
-            File uidFile = new File(worldFolder, "uid.dat");
-            if (uidFile.exists()) { uidFile.delete(); plugin.getLogger().info("[Debug] 已删除 uid.dat"); }
-            File paperWorldFile = new File(worldFolder, "paper-world.yml");
-            if (paperWorldFile.exists()) { paperWorldFile.delete(); }
-            File sessionLockFile = new File(worldFolder, "session.lock");
-            if (sessionLockFile.exists()) { sessionLockFile.delete(); }
-
-            plugin.getLogger().info("[Debug] 加载已有世界: " + worldName);
-            bukkitWorld = Bukkit.createWorld(new org.bukkit.WorldCreator(worldName));
-            if (bukkitWorld != null) {
-                plugin.getLogger().info("[Debug] 世界 " + worldName + " 加载成功");
-                GameWorld seat = new GameWorld(worldName, plugin, bukkitWorld);
-                reservesSeats.put(worldName, seat);
-                return seat;
-            } else {
-                plugin.getLogger().severe("[Debug] 世界 " + worldName + " 加载失败（Bukkit.createWorld返回null）");
-            }
+        // 从 maps/<templateName>/ 查找地图模板
+        File mapDir = new File(plugin.getDataFolder(), "maps/" + templateName);
+        if (!mapDir.isDirectory()) {
+            plugin.getLogger().severe("模板地图不存在: " + mapDir.getAbsolutePath());
+            plugin.getLogger().severe("无法创建备战席实例: " + seatInstanceName + "（模板 " + templateName + " 不存在）");
+            seatCounter--;
+            return null;
         }
 
-        plugin.getLogger().severe("无法创建备战席实例: " + seatInstanceName + "（世界 " + worldName + " 不存在或无法加载）");
-        seatCounter--;
-        return null;
+        File templateFolder = findMapWorldFolder(mapDir);
+        if (templateFolder == null) {
+            plugin.getLogger().severe("未找到地图世界文件: " + mapDir.getAbsolutePath()
+                + "（请放入含 level.dat 的文件夹）");
+            plugin.getLogger().severe("无法创建备战席实例: " + seatInstanceName + "（模板 " + templateName + " 中无 level.dat）");
+            seatCounter--;
+            return null;
+        }
+
+        // 复制模板到实例文件夹
+        File targetFolder = new File(Bukkit.getWorldContainer(), seatInstanceName);
+        if (targetFolder.exists()) {
+            plugin.getLogger().warning("目标世界文件夹已存在，将被覆盖: " + seatInstanceName);
+            deleteFolder(targetFolder);
+        }
+
+        try {
+            copyFolder(templateFolder, targetFolder);
+            // 清理冲突文件
+            File uidFile = new File(targetFolder, "uid.dat");
+            if (uidFile.exists()) { uidFile.delete(); plugin.getLogger().info("[Debug] 已删除 uid.dat"); }
+            File paperWorldFile = new File(targetFolder, "paper-world.yml");
+            if (paperWorldFile.exists()) { paperWorldFile.delete(); }
+            File sessionLockFile = new File(targetFolder, "session.lock");
+            if (sessionLockFile.exists()) { sessionLockFile.delete(); }
+            plugin.getLogger().info("备战席模板 " + templateName + " 已复制到 " + seatInstanceName);
+        } catch (Exception e) {
+            plugin.getLogger().severe("复制备战席地图失败: " + e.getMessage());
+            seatCounter--;
+            return null;
+        }
+
+        // 加载世界
+        WorldCreator creator = new WorldCreator(seatInstanceName);
+        bukkitWorld = Bukkit.createWorld(creator);
+        if (bukkitWorld == null) {
+            plugin.getLogger().severe("无法加载备战席世界: " + seatInstanceName);
+            seatCounter--;
+            return null;
+        }
+
+        plugin.getLogger().info("[Debug] 备战席 " + seatInstanceName + " 加载成功");
+        GameWorld seat = new GameWorld(templateName, plugin, bukkitWorld);
+        reservesSeats.put(seatInstanceName, seat);
+        return seat;
     }public void deleteReservesSeat(String seatName) {
         GameWorld seat = reservesSeats.remove(seatName);
         if (seat != null) {
@@ -214,5 +242,39 @@ public class WorldManager {
         float yaw = (float) config.getDouble("reserves_seat.teleport_to.yaw", 0.0);
         float pitch = (float) config.getDouble("reserves_seat.teleport_to.pitch", 0.0);
         return new org.bukkit.Location(seat.getBukkitWorld(), x, y, z, yaw, pitch);
+    }
+    /**
+     * 在地图文件夹下找到含 level.dat 的子文件夹
+     */
+    private File findMapWorldFolder(File mapDir) {
+        if (!mapDir.isDirectory()) return null;
+        File[] subDirs = mapDir.listFiles(File::isDirectory);
+        if (subDirs != null) {
+            for (File subDir : subDirs) {
+                if (new File(subDir, "level.dat").exists()) {
+                    return subDir;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 复制文件夹（递归）
+     */
+    private void copyFolder(File source, File target) throws java.io.IOException {
+        if (source.isDirectory()) {
+            if (!target.exists() && !target.mkdirs()) {
+                throw new java.io.IOException("无法创建目录: " + target);
+            }
+            File[] children = source.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    copyFolder(child, new File(target, child.getName()));
+                }
+            }
+        } else {
+            java.nio.file.Files.copy(source.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }
