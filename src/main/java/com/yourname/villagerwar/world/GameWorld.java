@@ -222,7 +222,7 @@ public class GameWorld {
     /**
      * 获取指定队伍的一个出生点位置
      */
-    private Location getTeamSpawnLocation(GamePlayer.Team team, Game game) {
+    public Location getTeamSpawnLocation(GamePlayer.Team team, Game game) {
         if (mapConfig == null) {
             return bukkitWorld.getSpawnLocation();
         }

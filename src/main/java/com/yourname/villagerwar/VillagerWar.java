@@ -77,6 +77,7 @@ public class VillagerWar extends JavaPlugin {
         pm.registerEvents(new com.yourname.villagerwar.listener.PlayerDeathListener(this), this);
         pm.registerEvents(new com.yourname.villagerwar.listener.PlayerInteractListener(this), this);
         pm.registerEvents(new com.yourname.villagerwar.listener.PlayerMoveListener(this), this);
+        pm.registerEvents(new com.yourname.villagerwar.listener.PlayerRespawnListener(this), this);
         pm.registerEvents(new com.yourname.villagerwar.listener.GUIListener(this), this);
     }
 

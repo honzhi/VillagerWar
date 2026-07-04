@@ -3,6 +3,7 @@ package com.yourname.villagerwar.manager;
 import com.yourname.villagerwar.Game;
 import com.yourname.villagerwar.GamePlayer;
 import com.yourname.villagerwar.GameState;
+import com.yourname.villagerwar.VillagerWar;
 
 import java.util.ArrayList;
 import java.util.HashMap;
