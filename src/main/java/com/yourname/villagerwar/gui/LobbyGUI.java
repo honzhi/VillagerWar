@@ -272,7 +272,7 @@ public class LobbyGUI {
 
         // 保存背包并应用备战席预设
         VillagerWar.getInstance().getInventoryManager().save(player);
-        VillagerWar.getInstance().getInventoryManager().apply(player, "lobby");
+        VillagerWar.getInstance().getInventoryManager().apply(player, "matching");
 
         // 查找或创建游戏
         Game game = VillagerWar.getInstance().getGameManager().findOrCreateGame(mapId, modeId);
