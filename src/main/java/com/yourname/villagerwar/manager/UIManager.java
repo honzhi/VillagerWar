@@ -61,7 +61,7 @@ public class UIManager {
                 titleManager.sendActionBar(gp, msg);
             }
         }
-        VillagerWar.getInstance().getLogger().info("[UI] applyWaitingUI: 已为 " + game.getPlayerCount() + " 人设置等待标题");
+        startWaitingTask();
     }
 
     /**
