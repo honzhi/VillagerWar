@@ -37,22 +37,28 @@ public class UIManager {
         if (config == null) return;
 
         String title = config.getWaitingTitle();
-        String subtitle = config.getWaitingSubtitle();
+        String rawSubtitle = config.getWaitingSubtitle();
         String actionBar = config.getWaitingActionBar();
+        int current = game.getPlayerCount();
+        int max = game.getGameRule().getMaxPlayers();
 
         for (GamePlayer gp : game.getPlayers()) {
             Player p = gp.getPlayer();
             if (p == null || !p.isOnline()) continue;
 
             if (!title.isEmpty()) {
-                titleManager.sendTitle(gp, title, subtitle, 10, Integer.MAX_VALUE, 10);
+                String subtitle = rawSubtitle
+                    .replace("{current}", String.valueOf(current))
+                    .replace("{max}", String.valueOf(max));
+                titleManager.sendTitle(gp, title, subtitle, 10, 999999, 10);
             }
             if (!actionBar.isEmpty()) {
-                String msg = actionBar.replace("{current}", String.valueOf(game.getPlayerCount()))
-                    .replace("{max}", String.valueOf(game.getGameRule().getMaxPlayers()));
+                String msg = actionBar.replace("{current}", String.valueOf(current))
+                    .replace("{max}", String.valueOf(max));
                 titleManager.sendActionBar(gp, msg);
             }
         }
+        VillagerWar.getInstance().getLogger().info("[UI] applyWaitingUI: 已为 " + game.getPlayerCount() + " 人设置等待标题");
     }
 
     /**
