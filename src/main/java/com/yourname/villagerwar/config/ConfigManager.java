@@ -49,8 +49,17 @@ public class ConfigManager {
     }
 
     public void reloadAll() {
+        // 清空所有缓存配置
         shopConfigs.clear();
         mapConfigs.clear();
+        statusConfigs.clear();
+        pluginConfig = null;
+        skillsConfig = null;
+        messagesConfig = null;
+        gameModesConfig = null;
+        gameConfig = null;
+        // 重新从磁盘加载
+        plugin.reloadConfig();
         loadAll();
     }
 
