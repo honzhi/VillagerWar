@@ -10,6 +10,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,7 +213,8 @@ public class ScoreboardManager {
     }
 
     public void clearAll() {
-        for (GamePlayer gp : playerBoards.keySet()) {
+        // 使用副本迭代，避免 ConcurrentModificationException
+        for (GamePlayer gp : new ArrayList<>(playerBoards.keySet())) {
             removeScoreboard(gp);
         }
         playerBoards.clear();
