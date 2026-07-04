@@ -146,6 +146,29 @@ public class LobbyGUI {
         return item;
     }
 
+    private static ItemStack buildSkillItem(ConfigurationSection section) {
+        if (section == null) return null;
+        String materialName = section.getString("material", "book");
+        Material material = Material.getMaterial(materialName.toUpperCase());
+        if (material == null) material = Material.BOOK;
+
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+
+        String displayName = section.getString("display_name", "Skill");
+        if (!displayName.isEmpty()) meta.setDisplayName(MessageUtil.colorize(displayName));
+
+        List<String> lore = new ArrayList<>();
+        for (String line : section.getStringList("lore")) {
+            lore.add(MessageUtil.colorize(line));
+        }
+        meta.setLore(lore);
+
+        item.setItemMeta(meta);
+        return item;
+    }
+
     private static ItemStack buildModeItem(ConfigurationSection section, String mapId) {
         if (section == null) return null;
         String materialName = section.getString("material", "knowledge_book");
