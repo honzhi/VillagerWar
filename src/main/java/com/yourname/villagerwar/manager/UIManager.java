@@ -12,6 +12,8 @@ import com.yourname.villagerwar.ui.BossBarManager;
 import com.yourname.villagerwar.ui.TitleManager;
 import com.yourname.villagerwar.util.MessageUtil;
 import com.yourname.villagerwar.ui.MessageManager;
+import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitTask;
 
 public class UIManager {
 
@@ -20,6 +22,7 @@ public class UIManager {
     private final BossBarManager bossBarManager;
     private final TitleManager titleManager;
     private final MessageManager messageManager;
+    private BukkitTask waitingTask;
 
     public UIManager(Game game) {
         this.game = game;
@@ -222,7 +225,40 @@ public class UIManager {
         applyStateUI(GameState.REWARD);
     }
 
+    private void startWaitingTask() {
+        if (waitingTask != null) {
+            waitingTask.cancel();
+            waitingTask = null;
+        }
+        waitingTask = Bukkit.getScheduler().runTaskTimer(VillagerWar.getInstance(), () -> {
+            if (game.getState() != null) {
+                if (waitingTask != null) {
+                    waitingTask.cancel();
+                    waitingTask = null;
+                }
+                return;
+            }
+            com.yourname.villagerwar.config.holder.StatusConfig config = VillagerWar.getInstance().getConfigManager().getStatusConfig("preparing");
+            if (config == null) return;
+            String actionBar = config.getWaitingActionBar();
+            if (actionBar.isEmpty()) return;
+            int current = game.getPlayerCount();
+            int max = game.getGameRule().getMaxPlayers();
+            String msg = actionBar.replace("{current}", String.valueOf(current)).replace("{max}", String.valueOf(max));
+            for (com.yourname.villagerwar.GamePlayer gp : game.getPlayers()) {
+                org.bukkit.entity.Player p = gp.getPlayer();
+                if (p != null && p.isOnline()) {
+                    titleManager.sendActionBar(gp, msg);
+                }
+            }
+        }, 0L, 20L);
+    }
+
     public void clearAll() {
+        if (waitingTask != null) {
+            waitingTask.cancel();
+            waitingTask = null;
+        }
         scoreboardManager.clearAll();
         bossBarManager.clearAll();
         titleManager.clearAll();
