@@ -53,6 +53,10 @@ public class GUIListener implements Listener {
         if (event.getPlayer() instanceof Player) {
             String playerName = event.getPlayer().getName();
             if (GUIUtils.getOpenGUI(playerName) != null) {
+                String closedGui = GUIUtils.getOpenGUI(playerName);
+                if ("skill_select".equals(closedGui)) {
+                    SkillSelectGUI.clearPageData(playerName);
+                }
                 GUIUtils.removePlayer(playerName);
             }
             if (ShopGUI.isOpen((Player) event.getPlayer())) {

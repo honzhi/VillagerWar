@@ -1,16 +1,11 @@
-# ─── 大厅 GUI：技能选择 ───
-# 玩家在 SKILL_SELECT 状态下打开的界面
-# 使用 skills.symbol 标记的位置，自动从 skills.yml 读取技能列表依次填充
-
 title: "&8┌ &6选择技能 &8┐"
 layout:
-  page1:
-    - "aaaaaaaaa"
-    - "a0000000a"
-    - "a0000000a"
-    - "a0000000a"
-    - "a0000000a"
-    - "←aaaXaaa→"
+  - "aaaaaaaaa"
+  - "a0000000a"
+  - "a0000000a"
+  - "a0000000a"
+  - "a0000000a"
+  - "←aaaXaaa→"
 
 base:
   a:
@@ -43,9 +38,6 @@ base:
     click:
       - "next_page"
 
-# ─── 技能映射配置 ───
-# symbol: 在 layout 中用此字符标记技能位置，按 skills.yml 顺序依次填充
-# click:   点击技能时默认执行的动作（自动附带 select_skill 效果）
 skills:
   symbol: 0
   click:
