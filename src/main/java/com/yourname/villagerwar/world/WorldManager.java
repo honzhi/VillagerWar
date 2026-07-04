@@ -57,13 +57,13 @@ public class WorldManager {
     public void deleteGameWorld(GameWorld gw) {
         if (gw == null) return;
 
+        org.bukkit.World bw = gw.getBukkitWorld();
         gw.unload();
         activeWorlds.remove(gw.getWorldName());
 
         // 删除世界文件夹
-        World bukkitWorld = gw.getBukkitWorld();
-        if (bukkitWorld != null) {
-            String worldName = bukkitWorld.getName();
+        if (bw != null) {
+            String worldName = bw.getName();
             File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
             if (worldFolder.exists()) {
                 deleteFolder(worldFolder);
@@ -221,11 +221,11 @@ public class WorldManager {
     public void deleteReservesSeat(String seatName) {
         GameWorld seat = reservesSeats.remove(seatName);
         if (seat != null) {
+            org.bukkit.World bw = seat.getBukkitWorld();
             seat.unload();
             // 删除世界文件夹
-            World bukkitWorld = seat.getBukkitWorld();
-            if (bukkitWorld != null) {
-                File worldFolder = new File(Bukkit.getWorldContainer(), bukkitWorld.getName());
+            if (bw != null) {
+                File worldFolder = new File(Bukkit.getWorldContainer(), bw.getName());
                 if (worldFolder.exists()) {
                     deleteFolder(worldFolder);
                 }
