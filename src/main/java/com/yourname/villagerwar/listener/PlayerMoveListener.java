@@ -53,7 +53,6 @@ public class PlayerMoveListener implements Listener {
                 break;
             case ENDING:
             case REWARD:
-            case RETURNING:
                 event.setCancelled(true);
                 break;
         }
