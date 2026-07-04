@@ -92,13 +92,31 @@ public class Game {
         // 实时更新状态UI（计分板、标题、操作栏）
         uiManager.tick(gameTime);
 
-        // 仅在游戏中执行游戏逻辑
-        if (state != GameState.PLAYING) return;
-        spawnManager.tick(gameTime);
-        economyManager.tick(gameTime);
-        respawnManager.tick(gameTime);
-        victoryManager.tick(gameTime);
-
+        switch (state) {
+            case PLAYING:
+                spawnManager.tick(gameTime);
+                economyManager.tick(gameTime);
+                respawnManager.tick(gameTime);
+                victoryManager.tick(gameTime);
+                break;
+            case ENDING:
+            case REWARD:
+                // ENDING/REWARD 持续时间到后自动进入下一状态
+                String configName = (state == GameState.ENDING) ? "ending" : "reward";
+                int stateSec = stateTime / 20;
+                int duration = 5;
+                com.yourname.villagerwar.config.holder.StatusConfig sc =
+                    VillagerWar.getInstance().getConfigManager().getStatusConfig(configName);
+                if (sc != null) duration = sc.getDuration();
+                if (stateSec >= duration) {
+                    setState(state == GameState.ENDING ? GameState.REWARD : GameState.RETURNING);
+                }
+                break;
+            case RETURNING:
+                // RETURNING 执行完毕后移除游戏
+                VillagerWar.getInstance().getGameManager().removeGame(getGameId());
+                break;
+        }
     }
 
 
