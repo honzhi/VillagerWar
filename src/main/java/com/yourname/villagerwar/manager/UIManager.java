@@ -33,7 +33,7 @@ public class UIManager {
     }
 
     /**
-     * 应用匹配等待阶段 UI（备战席等人时显示）
+     * 搴旂敤鍖归厤绛夊緟闃舵 UI锛堝鎴樺腑绛変汉鏃舵樉绀猴級
      */
     public void applyWaitingUI() {
         StatusConfig config = VillagerWar.getInstance().getConfigManager().getStatusConfig("preparing");
@@ -65,16 +65,23 @@ public class UIManager {
     }
 
     /**
-     * 根据当前游戏状态应用 UI 配置（标题、记分板、操作栏等）
+     * 鏍规嵁褰撳墠娓告垙鐘舵€佸簲鐢?UI 閰嶇疆锛堟爣棰樸€佽鍒嗘澘銆佹搷浣滄爮绛夛級
      */
     public void applyStateUI(GameState state) {
+        // 清除上一个状态的标题和操作栏
+        for (GamePlayer gp : game.getPlayers()) {
+            Player p = gp.getPlayer();
+            if (p != null && p.isOnline()) {
+                p.resetTitle();
+            }
+        }
         String configName = getConfigNameForState(state);
         if (configName == null) return;
 
         StatusConfig config = VillagerWar.getInstance().getConfigManager().getStatusConfig(configName);
         if (config == null) return;
 
-        // [PREPARING] 匹配开始音效
+        // [PREPARING] 鍖归厤寮€濮嬮煶鏁?
         if (state == GameState.PREPARING && config.hasMatchStartSound()) {
             String soundStr = config.getMatchStartSound();
             String[] parts = soundStr.split(" ");
@@ -105,10 +112,10 @@ public class UIManager {
             }
         }
 
-        // 计分板
+        // 璁″垎鏉?
         scoreboardManager.setupFromConfig(config);
 
-        // 操作栏
+        // 鎿嶄綔鏍?
         if (config.isActionBarEnabled()) {
             for (GamePlayer gp : game.getPlayers()) {
                 titleManager.sendActionBar(gp, formatActionBar(config, gp));
@@ -117,30 +124,30 @@ public class UIManager {
     }
 
     /**
-     * 每 tick 更新 UI（当前支持计分板和操作栏动态更新）
+     * 姣?tick 鏇存柊 UI锛堝綋鍓嶆敮鎸佽鍒嗘澘鍜屾搷浣滄爮鍔ㄦ€佹洿鏂帮級
      */
     public void tick(int gameTime) {
         GameState state = game.getState();
 
-        // 获取当前状态配置
+        // 鑾峰彇褰撳墠鐘舵€侀厤缃?
         String configName = getConfigNameForState(state);
         StatusConfig config = configName != null ?
                 VillagerWar.getInstance().getConfigManager().getStatusConfig(configName) : null;
 
         if (config != null) {
-            // 实时更新计分板
+            // 瀹炴椂鏇存柊璁″垎鏉?
             if (config.isScoreboardEnabled()) {
                 scoreboardManager.tick(gameTime);
             }
 
-            // 实时更新操作栏
+            // 瀹炴椂鏇存柊鎿嶄綔鏍?
             if (config.isActionBarEnabled()) {
                 for (GamePlayer gp : game.getPlayers()) {
                     titleManager.sendActionBar(gp, formatActionBar(config, gp));
                 }
             }
 
-            // [READY] 倒计时音效+标题（最后3秒）
+            // [READY] 鍊掕鏃堕煶鏁?鏍囬锛堟渶鍚?绉掞級
             if (state == GameState.READY && game.getStateTime() % 20 == 0 && config.hasReady()) {
                 int remain = Math.max(0, 3 - game.getStateTime() / 20);
                 String rSound = remain <= 1 ? config.getReadyFinalSound() : config.getReadySound();
@@ -169,7 +176,7 @@ public class UIManager {
                 }
             }
 
-            // 实时更新标题倒计时（仅对有标题且有余数的状态）
+            // 瀹炴椂鏇存柊鏍囬鍊掕鏃讹紙浠呭鏈夋爣棰樹笖鏈変綑鏁扮殑鐘舵€侊級
             if (config.isTitleEnabled() && game.getStateTime() % 20 == 0) {
                 int stateSec = game.getStateTime() / 20;
                 int remain = Math.max(0, config.getDuration() - stateSec);
@@ -182,7 +189,7 @@ public class UIManager {
             }
         }
 
-        // 保留旧的 PLAYING-only 逻辑（BossBar）
+        // 淇濈暀鏃х殑 PLAYING-only 閫昏緫锛圔ossBar锛?
         if (state == GameState.PLAYING) {
             bossBarManager.tick(gameTime);
         }
@@ -207,8 +214,8 @@ public class UIManager {
             case PREPARING: return "preparing";
             case SKILL_SELECT: return "skills_select";
             case SKILL_SHOW: return "skill_show";
-            case TELEPORT: return null;  // 纯传送阶段，不显示UI
-            case READY: return "playing"; // Ready倒计时，使用playing配置的ready段
+            case TELEPORT: return null;  // 绾紶閫侀樁娈碉紝涓嶆樉绀篣I
+            case READY: return "playing"; // Ready鍊掕鏃讹紝浣跨敤playing閰嶇疆鐨剅eady娈?
             case PLAYING: return "playing";
             case ENDING: return "ending";
             case REWARD: return "reward";
