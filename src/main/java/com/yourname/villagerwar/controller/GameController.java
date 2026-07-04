@@ -41,24 +41,39 @@ public class GameController {
     public void onStateChange(GameState newState) {
         switch (newState) {
             case PREPARING:
-                // 创建游戏地图世界
                 game.createGameWorld();
                 game.getTeamManager().assignTeams();
                 break;
             case SKILL_SELECT:
-                game.getSkillManager().openSkillSelectGUI();
-                break;
-            case SKILL_SHOW:
-                break;
-            case TELEPORT:
+                // 切换为技能选择背包
                 for (GamePlayer gp : game.getPlayers()) {
                     Player player = gp.getPlayer();
                     if (player != null && player.isOnline()) {
-                        VillagerWar.getInstance().getInventoryManager().apply(player, "playing");
+                        VillagerWar.getInstance().getInventoryManager().clear(player);
+                        VillagerWar.getInstance().getInventoryManager().apply(player, "skill_select");
+                    }
+                }
+                game.getSkillManager().openSkillSelectGUI();
+                break;
+            case SKILL_SHOW:
+                // 切换为技能选择后背包
+                for (GamePlayer gp : game.getPlayers()) {
+                    Player player = gp.getPlayer();
+                    if (player != null && player.isOnline()) {
+                        VillagerWar.getInstance().getInventoryManager().clear(player);
+                        VillagerWar.getInstance().getInventoryManager().apply(player, "after_skill_select");
+                    }
+                }
+                break;
+            case TELEPORT:
+                // 传送至游戏地图，清空背包
+                for (GamePlayer gp : game.getPlayers()) {
+                    Player player = gp.getPlayer();
+                    if (player != null && player.isOnline()) {
+                        VillagerWar.getInstance().getInventoryManager().clear(player);
                     }
                 }
                 game.getGameWorld().teleportPlayers(game);
-                // 清理备战席实例
                 if (game.getReservesSeatName() != null) {
                     VillagerWar.getInstance().getWorldManager().deleteReservesSeat(game.getReservesSeatName());
                     game.setReservesSeatName(null);
@@ -83,7 +98,6 @@ public class GameController {
                     }
                 }
                 game.getGameWorld().returnToLobby(game);
-                // 游戏结束后删除游戏世界
                 game.destroyGameWorld();
                 break;
         }
