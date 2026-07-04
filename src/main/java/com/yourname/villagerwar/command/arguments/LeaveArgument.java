@@ -58,6 +58,7 @@ public class LeaveArgument implements SubCommand {
                 plugin.getInventoryManager().restore(player);
             }
             plugin.getGameManager().leaveGame(player);
+            player.resetTitle();
             sender.sendMessage("§7[§6村民战争§7] §e你已退出匹配队列");
             return true;
         }
@@ -67,6 +68,7 @@ public class LeaveArgument implements SubCommand {
         if (plugin.getInventoryManager().hasSnapshot(player)) {
             plugin.getInventoryManager().clear(player);
             plugin.getInventoryManager().restore(player);
+            player.resetTitle();
             sender.sendMessage("§7[§6村民战争§7] §e你已退出匹配队列");
             return true;
         }
