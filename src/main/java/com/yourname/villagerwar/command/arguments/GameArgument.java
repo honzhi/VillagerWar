@@ -78,6 +78,7 @@ public class GameArgument implements SubCommand {
             sender.sendMessage("§c你没有权限执行此操作");
             return true;
         }
+        player.resetTitle();
         plugin.getInventoryManager().clear(player);
         plugin.getInventoryManager().restore(player);
         plugin.getGameManager().leaveGame(player);

@@ -47,11 +47,11 @@ public class LeaveArgument implements SubCommand {
         Optional<Game> gameOpt = plugin.getGameManager().getGame(player);
         if (gameOpt.isPresent()) {
             Game game = gameOpt.get();
-            if (game.getState() != GameState.PREPARING) {
+            if (game.getState() != GameState.PREPARING && game.getState() != null) {
                 sender.sendMessage("§7[§6村民战争§7] §c匹配已完成，游戏已开始，无法退出匹配");
                 return true;
             }
-            // 在 PREPARING 阶段（等人中）→ 退出匹配
+            // 在等待或 PREPARING 阶段→ 退出匹配
             GUIUtils.removePlayer(player.getName());
             if (plugin.getInventoryManager().hasSnapshot(player)) {
                 plugin.getInventoryManager().clear(player);

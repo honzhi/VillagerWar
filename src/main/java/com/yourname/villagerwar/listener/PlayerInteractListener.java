@@ -44,6 +44,7 @@ public class PlayerInteractListener implements Listener {
                 plugin.getInventoryManager().restoreLocation(player);
                 plugin.getInventoryManager().clear(player);
                 plugin.getInventoryManager().restore(player);
+                player.resetTitle();
                 plugin.getGameManager().leaveGame(player);
                 com.yourname.villagerwar.gui.GUIUtils.removePlayer(player.getName());
                 player.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&',
