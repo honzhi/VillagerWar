@@ -305,8 +305,7 @@ public class LobbyGUI {
         selectedMap.remove(player.getName());
 
         // 通知玩家
-        player.sendTitle(MessageUtil.colorize("&a&l匹配成功"),
-            MessageUtil.colorize("&7正在进入 " + game.getMapId()), 10, 40, 20);
+        // 通知玩家（等待阶段，不显示匹配成功标题）
 
         player.sendMessage(MessageUtil.colorize("&a已加入游戏！当前人数: &e" + game.getPlayerCount()));
 
@@ -316,6 +315,7 @@ public class LobbyGUI {
         int totalMinPlayers = gameRule.getMinPlayers() * teamCount;
         VillagerWar.getInstance().getLogger().info("[Debug] Players=" + game.getPlayerCount() + "/" + totalMinPlayers + " (每队最低" + gameRule.getMinPlayers() + "人, 共" + teamCount + "队)");
         if (game.getPlayerCount() >= totalMinPlayers) {
+            game.getController().start();
             VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！10秒后开始游戏...");
             // 通知所有玩家准备
             for (GamePlayer gp : game.getPlayers()) {
