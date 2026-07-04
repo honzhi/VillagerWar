@@ -45,7 +45,7 @@ public class SkillsConfig {
 
         public SkillDef(String id, ConfigurationSection section) {
             this.id = id;
-            this.displayName = section.getString("display-name", id);
+            this.displayName = section.getString("display_name", id);
             String matName = section.getString("material", "DIAMOND_SWORD");
             Material mat;
             try {

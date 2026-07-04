@@ -192,7 +192,7 @@ public class ScoreboardManager {
 
     public void tick(int gameTime) {
         if (currentConfig == null) return;
-        for (Map.Entry<GamePlayer, org.bukkit.scoreboard.Scoreboard> entry : playerBoards.entrySet()) {
+        for (Map.Entry<GamePlayer, org.bukkit.scoreboard.Scoreboard> entry : new ArrayList<>(playerBoards.entrySet())) {
             GamePlayer gp = entry.getKey();
             org.bukkit.scoreboard.Scoreboard board = entry.getValue();
             Objective obj = board.getObjective(DisplaySlot.SIDEBAR);

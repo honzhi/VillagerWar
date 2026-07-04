@@ -68,6 +68,9 @@ public class PlayerDeathListener implements Listener {
 
         // Clear default death message (we handle it via UIManager)
         event.deathMessage(null);
+
+        // 跳过死亡界面，立即触发 PlayerRespawnEvent
+        // 不跳过死亡界面，由 PlayerRespawnListener 处理重置逻辑
     }
 
     private void broadcastKillStreak(Game game, Player player, String message) {

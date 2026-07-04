@@ -4,6 +4,10 @@ import com.yourname.villagerwar.Game;
 import com.yourname.villagerwar.GamePlayer;
 import com.yourname.villagerwar.GameState;
 import com.yourname.villagerwar.VillagerWar;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,9 +40,9 @@ public class RespawnManager {
 
         for (UUID uuid : ready) {
             respawnQueue.remove(uuid);
-            GamePlayer player = game.getPlayer(uuid);
-            if (player != null) {
-                respawnPlayer(player);
+            GamePlayer gp = game.getPlayer(uuid);
+            if (gp != null) {
+                respawnPlayer(gp);
             }
         }
     }
@@ -50,7 +54,17 @@ public class RespawnManager {
      */
     public void addToRespawnQueue(GamePlayer player, int delayTicks) {
         respawnQueue.put(player.getUuid(), game.getGameTime() + delayTicks);
-        // TODO: 发送已加入复活队列的消息
+    }
+
+    /**
+     * 获取玩家剩余复活时间（秒）
+     */
+    public int getRemainingTime(GamePlayer player) {
+        if (player == null) return 0;
+        Integer expireTick = respawnQueue.get(player.getUuid());
+        if (expireTick == null) return 0;
+        int remainTicks = expireTick - game.getGameTime();
+        return Math.max(0, (remainTicks + 19) / 20); // 向上取整到秒
     }
 
     /**
@@ -58,14 +72,35 @@ public class RespawnManager {
      */
     public void respawnPlayer(GamePlayer player) {
         if (player == null) return;
-        // TODO: 将玩家传送到己方基地重生点
-        // TODO: 设置玩家状态（清除伤害、设置生命值等）
+        Player bukkitPlayer = player.getPlayer();
+        if (bukkitPlayer == null || !bukkitPlayer.isOnline()) return;
+
+        // 传送到己方队伍出生点
+        if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
+            Location spawnLoc = game.getGameWorld().getTeamSpawnLocation(player.getTeam(), game);
+            if (spawnLoc != null) {
+                bukkitPlayer.teleport(spawnLoc);
+            } else {
+                bukkitPlayer.teleport(game.getGameWorld().getBukkitWorld().getSpawnLocation());
+            }
+        }
+
+        // 恢复状态
+        bukkitPlayer.setGameMode(GameMode.SURVIVAL);
+        bukkitPlayer.setHealth(bukkitPlayer.getMaxHealth());
+        bukkitPlayer.setFoodLevel(20);
+        bukkitPlayer.setFireTicks(0);
+        bukkitPlayer.setFallDistance(0);
+
+        // 清除标题
+        bukkitPlayer.resetTitle();
     }
 
     /**
      * 检查玩家是否在复活队列中。
      */
     public boolean isInQueue(GamePlayer player) {
+        if (player == null) return false;
         return respawnQueue.containsKey(player.getUuid());
     }
 
