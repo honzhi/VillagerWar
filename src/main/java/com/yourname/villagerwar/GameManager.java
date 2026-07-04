@@ -12,7 +12,6 @@ public class GameManager {
                            com.yourname.villagerwar.config.rule.GameRule gameRule) {
         Game game = new Game(gameName, mapId, modeId, gameRule);
         games.put(game.getGameId(), game);
-        game.getController().start();
         return game;
     }
 
