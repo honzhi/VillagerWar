@@ -38,6 +38,8 @@ public class PlayerMoveListener implements Listener {
             return;
         }
 
+        if (state == null) return;  // 等待匹配阶段，允许移动
+
         switch (state) {
             case PREPARING:
             case SKILL_SELECT:
