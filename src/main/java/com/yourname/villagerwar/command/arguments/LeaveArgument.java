@@ -1,6 +1,7 @@
 package com.yourname.villagerwar.command.arguments;
 
 import com.yourname.villagerwar.Game;
+import com.yourname.villagerwar.GameState;
 import com.yourname.villagerwar.VillagerWar;
 import com.yourname.villagerwar.gui.LobbyGUI;
 import org.bukkit.command.CommandSender;
@@ -25,7 +26,7 @@ public class LeaveArgument implements SubCommand {
 
     @Override
     public String getDescription() {
-        return "离开当前游戏或匹配队列";
+        return "离开匹配队列（匹配成功后不可用）";
     }
 
     @Override
@@ -42,7 +43,26 @@ public class LeaveArgument implements SubCommand {
 
         Player player = (Player) sender;
 
-        // 如果在匹配队列中 → 清理
+        // 如果已经在游戏中且游戏已进入正式阶段 → 拒绝
+        Optional<Game> gameOpt = plugin.getGameManager().getGame(player);
+        if (gameOpt.isPresent()) {
+            Game game = gameOpt.get();
+            if (game.getState() != GameState.PREPARING) {
+                sender.sendMessage("§7[§6村民战争§7] §c匹配已完成，游戏已开始，无法退出匹配");
+                return true;
+            }
+            // 在 PREPARING 阶段（等人中）→ 退出匹配
+            LobbyGUI.removePlayer(player.getName());
+            if (plugin.getInventoryManager().hasSnapshot(player)) {
+                plugin.getInventoryManager().clear(player);
+                plugin.getInventoryManager().restore(player);
+            }
+            plugin.getGameManager().leaveGame(player);
+            sender.sendMessage("§7[§6村民战争§7] §e你已退出匹配队列");
+            return true;
+        }
+
+        // 不在任何游戏中→尝试清理队列残留
         LobbyGUI.removePlayer(player.getName());
         if (plugin.getInventoryManager().hasSnapshot(player)) {
             plugin.getInventoryManager().clear(player);
@@ -51,18 +71,7 @@ public class LeaveArgument implements SubCommand {
             return true;
         }
 
-        // 如果在游戏中 → 离开
-        Optional<Game> gameOpt = plugin.getGameManager().getGame(player);
-        if (gameOpt.isPresent()) {
-            Game game = gameOpt.get();
-            plugin.getInventoryManager().clear(player);
-            plugin.getInventoryManager().restore(player);
-            plugin.getGameManager().leaveGame(player);
-            sender.sendMessage("§7[§6村民战争§7] §e你已离开游戏 §a" + game.getGameName());
-            return true;
-        }
-
-        sender.sendMessage("§7[§6村民战争§7] §c你不在任何游戏或匹配队列中");
+        sender.sendMessage("§7[§6村民战争§7] §c你不在任何匹配队列中");
         return true;
     }
 
