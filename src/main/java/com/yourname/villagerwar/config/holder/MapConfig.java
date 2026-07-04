@@ -21,6 +21,7 @@ public class MapConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
         this.id = file.getParentFile().getName();
         this.displayName = config.getString("display_name", id);
+        initBounds();
     }
 
     /**
@@ -58,33 +59,80 @@ public class MapConfig {
         return config.getString("shops", "defaults");
     }
 
+    private Double boundsMinX;
+    private Double boundsMaxX;
+    private Double boundsMinZ;
+    private Double boundsMaxZ;
+    private boolean boundsEnabled;
+
     /**
-     * 获取地图边界最小值-X
+     * 初始化边界：从 points1/points2 两个角点计算矩形边界
      */
-    public double getBoundsMinX() {
-        return config.getDouble("bounds.min_x", -50);
+    private void initBounds() {
+        ConfigurationSection boundsSection = config.getConfigurationSection("bounds");
+        if (boundsSection != null) {
+            ConfigurationSection p1 = boundsSection.getConfigurationSection("points1");
+            ConfigurationSection p2 = boundsSection.getConfigurationSection("points2");
+            if (p1 != null && p2 != null) {
+                double x1 = p1.getDouble("x", 0);
+                double z1 = p1.getDouble("z", 0);
+                double x2 = p2.getDouble("x", 0);
+                double z2 = p2.getDouble("z", 0);
+                this.boundsMinX = Math.min(x1, x2);
+                this.boundsMaxX = Math.max(x1, x2);
+                this.boundsMinZ = Math.min(z1, z2);
+                this.boundsMaxZ = Math.max(z1, z2);
+                this.boundsEnabled = true;
+                return;
+            }
+        }
+        this.boundsMinX = null;
+        this.boundsMaxX = null;
+        this.boundsMinZ = null;
+        this.boundsMaxZ = null;
+        this.boundsEnabled = false;
     }
 
     /**
-     * 获取地图边界最大值-X
+     * 检查坐标是否在地图边界内
+     * @return true 在边界内或无边界配置，false 超出边界
      */
-    public double getBoundsMaxX() {
-        return config.getDouble("bounds.max_x", 50);
+    public boolean isWithinBounds(double x, double z) {
+        if (!boundsEnabled) return true;
+        return x >= boundsMinX && x <= boundsMaxX && z >= boundsMinZ && z <= boundsMaxZ;
     }
 
     /**
-     * 获取地图边界最小值-Z
+     * 检查坐标是否在地图边界内（Location 版本）
      */
-    public double getBoundsMinZ() {
-        return config.getDouble("bounds.min_z", -50);
+    public boolean isWithinBounds(org.bukkit.Location loc) {
+        return isWithinBounds(loc.getX(), loc.getZ());
     }
 
     /**
-     * 获取地图边界最大值-Z
+     * 边界是否已启用（配置了两个角点）
      */
-    public double getBoundsMaxZ() {
-        return config.getDouble("bounds.max_z", 50);
-    }
+    public boolean isBoundsEnabled() { return boundsEnabled; }
+
+    /**
+     * 获取边界最小 X
+     */
+    public Double getBoundsMinX() { return boundsMinX; }
+
+    /**
+     * 获取边界最大 X
+     */
+    public Double getBoundsMaxX() { return boundsMaxX; }
+
+    /**
+     * 获取边界最小 Z
+     */
+    public Double getBoundsMinZ() { return boundsMinZ; }
+
+    /**
+     * 获取边界最大 Z
+     */
+    public Double getBoundsMaxZ() { return boundsMaxZ; }
 
     public String getDisplayName() { return displayName; }
     public File getFile() { return file; }
