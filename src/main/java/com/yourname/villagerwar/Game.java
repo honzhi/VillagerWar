@@ -99,6 +99,21 @@ public class Game {
                 respawnManager.tick(gameTime);
                 victoryManager.tick(gameTime);
                 break;
+            case SKILL_SELECT:
+                // 所有玩家已选择技能 → 立即跳转；否则超时后自动跳转
+                if (skillManager.allPlayersReady()) {
+                    VillagerWar.getInstance().getLogger().info("[Debug] 所有玩家已选择技能，进入技能展示");
+                    setState(GameState.SKILL_SHOW);
+                } else {
+                    com.yourname.villagerwar.config.holder.StatusConfig ssConfig =
+                        VillagerWar.getInstance().getConfigManager().getStatusConfig("skills_select");
+                    int timeout = (ssConfig != null) ? ssConfig.getDuration() : 30;
+                    if (stateTime / 20 >= timeout) {
+                        VillagerWar.getInstance().getLogger().info("[Debug] 技能选择超时，强制进入技能展示");
+                        setState(GameState.SKILL_SHOW);
+                    }
+                }
+                break;
             case ENDING:
             case REWARD:
                 // ENDING/REWARD 持续时间到后自动进入下一状态

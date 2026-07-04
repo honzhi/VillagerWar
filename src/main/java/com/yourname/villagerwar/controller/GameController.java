@@ -48,7 +48,8 @@ public class GameController {
                 game.getTeamManager().assignTeams();
                 break;
             case SKILL_SELECT:
-                // 切换为技能选择背包
+                // 重置技能选择状态，切换为技能选择背包
+                game.getSkillManager().resetSelections();
                 for (GamePlayer gp : game.getPlayers()) {
                     Player player = gp.getPlayer();
                     if (player != null && player.isOnline()) {
@@ -67,6 +68,26 @@ public class GameController {
                         VillagerWar.getInstance().getInventoryManager().apply(player, "after_skill_select");
                     }
                 }
+                // 技能展示3s后 → TELEPORT → 3s → READY → 3s → PLAYING
+                Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                    if (game.getState() != GameState.SKILL_SHOW) return;
+                    VillagerWar.getInstance().getLogger().info("[Debug] 第四步：传送至游戏地图");
+                    game.setState(GameState.TELEPORT);
+
+                    Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                        if (game.getState() != GameState.TELEPORT) return;
+                        VillagerWar.getInstance().getLogger().info("[Debug] 第五步：Ready 倒计时");
+                        game.setState(GameState.READY);
+
+                        Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
+                            if (game.getState() != GameState.READY) return;
+                            VillagerWar.getInstance().getLogger().info("[Debug] 第六步：游戏开始！");
+                            game.setState(GameState.PLAYING);
+                        }, 60L);  // Ready 3s
+
+                    }, 60L);  // 传送后3s
+
+                }, 60L);  // 技能展示3s
                 break;
             case TELEPORT:
                 // 传送至游戏地图，清空背包

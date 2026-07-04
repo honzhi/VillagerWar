@@ -13,9 +13,44 @@ public class SkillManager {
 
     private final Game game;
     private final Map<UUID, Long> cooldowns = new HashMap<>();
+    private final java.util.Set<UUID> skillSelected = new java.util.HashSet<>();
 
     public SkillManager(Game game) {
         this.game = game;
+    }
+
+    /**
+     * 重置所有玩家的技能选择状态（进入SKILL_SELECT时调用）
+     */
+    public void resetSelections() {
+        skillSelected.clear();
+    }
+
+    /**
+     * 标记玩家已选择技能
+     */
+    public void markSkillSelected(UUID playerUuid) {
+        skillSelected.add(playerUuid);
+    }
+
+    /**
+     * 检查玩家是否已选择技能
+     */
+    public boolean hasSelected(UUID playerUuid) {
+        return skillSelected.contains(playerUuid);
+    }
+
+    /**
+     * 检查是否所有在线玩家都已选择技能
+     */
+    public boolean allPlayersReady() {
+        for (GamePlayer gp : game.getPlayers()) {
+            org.bukkit.entity.Player p = gp.getPlayer();
+            if (p != null && p.isOnline() && !skillSelected.contains(gp.getUuid())) {
+                return false;
+            }
+        }
+        return game.getPlayers().isEmpty() ? false : true;
     }
 
     /**
