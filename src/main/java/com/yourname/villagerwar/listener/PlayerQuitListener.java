@@ -22,18 +22,19 @@ public class PlayerQuitListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
 
-        // 如果在匹配队列中 → 清理 + 归还背包
+        // 濡傛灉鍦ㄥ尮閰嶉槦鍒椾腑 鈫?娓呯悊 + 褰掕繕鑳屽寘
         GUIUtils.removePlayer(player.getName());
 
-        // 归还背包快照（队列和游戏中都有快照需要归还）
+        // 褰掕繕鑳屽寘蹇収锛堥槦鍒楀拰娓告垙涓兘鏈夊揩鐓ч渶瑕佸綊杩橈級
         if (plugin.getInventoryManager().hasSnapshot(player)) {
             plugin.getInventoryManager().restore(player);
         }
 
-        // 如果在一局游戏中 → 离开游戏
+        // 濡傛灉鍦ㄤ竴灞€娓告垙涓?鈫?绂诲紑娓告垙
         Optional<Game> gameOpt = plugin.getGameManager().getGame(player);
         gameOpt.ifPresent(game -> {
             plugin.getGameManager().leaveGame(player);
+            player.resetTitle();
             game.getUiManager().getMessageManager().broadcastMessage("game.leave",
                     "player", player.getName(),
                     "game", game.getGameName());
