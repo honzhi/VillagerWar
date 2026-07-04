@@ -108,12 +108,15 @@ public class GameController {
             case PLAYING:
                 break;
             case ENDING:
+                VillagerWar.getInstance().getLogger().info("[Debug] 进入结束展示阶段");
                 game.getUiManager().showEnding();
                 break;
             case REWARD:
+                VillagerWar.getInstance().getLogger().info("[Debug] 进入奖励结算阶段");
                 game.getUiManager().showReward();
                 break;
             case RETURNING:
+                VillagerWar.getInstance().getLogger().info("[Debug] 返回大厅：清除背包、传送、销毁世界");
                 for (GamePlayer gp : game.getPlayers()) {
                     Player player = gp.getPlayer();
                     if (player != null && player.isOnline()) {

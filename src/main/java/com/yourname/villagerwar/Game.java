@@ -115,16 +115,17 @@ public class Game {
                 }
                 break;
             case ENDING:
+                // 结束展示时长到 → 进入奖励结算
+                if (stateTime / 20 >= getStatusDuration("ending")) {
+                    VillagerWar.getInstance().getLogger().info("[Debug] 结束展示结束，进入奖励结算");
+                    setState(GameState.REWARD);
+                }
+                break;
             case REWARD:
-                // ENDING/REWARD 持续时间到后自动进入下一状态
-                String configName = (state == GameState.ENDING) ? "ending" : "reward";
-                int stateSec = stateTime / 20;
-                int duration = 5;
-                com.yourname.villagerwar.config.holder.StatusConfig sc =
-                    VillagerWar.getInstance().getConfigManager().getStatusConfig(configName);
-                if (sc != null) duration = sc.getDuration();
-                if (stateSec >= duration) {
-                    setState(state == GameState.ENDING ? GameState.REWARD : GameState.RETURNING);
+                // 奖励结算时长到 → 返回大厅
+                if (stateTime / 20 >= getStatusDuration("reward")) {
+                    VillagerWar.getInstance().getLogger().info("[Debug] 奖励结算结束，返回大厅");
+                    setState(GameState.RETURNING);
                 }
                 break;
             case RETURNING:
@@ -163,4 +164,10 @@ public class Game {
     public VictoryManager getVictoryManager() { return victoryManager; }
     public UIManager getUiManager() { return uiManager; }
     public GameController getController() { return controller; }
+
+    private int getStatusDuration(String configName) {
+        com.yourname.villagerwar.config.holder.StatusConfig sc =
+            VillagerWar.getInstance().getConfigManager().getStatusConfig(configName);
+        return (sc != null) ? sc.getDuration() : 5;
+    }
 }

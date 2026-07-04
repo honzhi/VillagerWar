@@ -117,6 +117,7 @@ public class GameArgument implements SubCommand {
                 p.sendMessage("§7[§6村民战争§7] §e管理员强制结束了本局游戏（平局）");
             }
         }
+        VillagerWar.getInstance().getLogger().info("[Debug] 管理员强制结束游戏，进入ENDING状态");
         game.setState(GameState.ENDING);
         sender.sendMessage("§7[§6村民战争§7] §a已以平局结束游戏");
         return true;
