@@ -21,7 +21,6 @@ public class MapConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
         this.id = file.getParentFile().getName();
         this.displayName = config.getString("display_name", id);
-        initBounds();
     }
 
     /**
@@ -59,52 +58,7 @@ public class MapConfig {
         return config.getString("shops", "defaults");
     }
 
-    private double borderCenterX;
-    private double borderCenterZ;
-    private double borderSize;
-    private boolean borderEnabled;
 
-    /**
-     * 初始化世界边界
-     * 配置格式：
-     *   bounds:
-     *     center: {x: 0, z: 0}    # 边界中心坐标
-     *     size: 100                # 边界直径（方块），不配置则无边限
-     */
-    private void initBounds() {
-        ConfigurationSection boundsSection = config.getConfigurationSection("bounds");
-        if (boundsSection != null && boundsSection.contains("center") && boundsSection.contains("size")) {
-            ConfigurationSection center = boundsSection.getConfigurationSection("center");
-            if (center != null) {
-                this.borderCenterX = center.getDouble("x", 0);
-                this.borderCenterZ = center.getDouble("z", 0);
-                this.borderSize = boundsSection.getDouble("size", 100);
-                this.borderEnabled = this.borderSize > 0;
-                return;
-            }
-        }
-        this.borderEnabled = false;
-    }
-
-    /**
-     * 世界边界是否已启用
-     */
-    public boolean isBorderEnabled() { return borderEnabled; }
-
-    /**
-     * 获取边界中心 X
-     */
-    public double getBorderCenterX() { return borderCenterX; }
-
-    /**
-     * 获取边界中心 Z
-     */
-    public double getBorderCenterZ() { return borderCenterZ; }
-
-    /**
-     * 获取边界直径
-     */
-    public double getBorderSize() { return borderSize; }
 
     public String getDisplayName() { return displayName; }
     public File getFile() { return file; }

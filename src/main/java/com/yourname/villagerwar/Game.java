@@ -66,24 +66,7 @@ public class Game {
             VillagerWar.getInstance().getLogger().severe("[Debug] Failed to create world for " + mapId);
             return false;
         }
-        // 根据地图配置设置原版世界边界
-        applyWorldBorder();
         return true;
-    }
-
-    /**
-     * 根据地图配置设置原版世界边界
-     */
-    private void applyWorldBorder() {
-        if (gameWorld == null || gameWorld.getMapConfig() == null) return;
-        com.yourname.villagerwar.config.holder.MapConfig mc = gameWorld.getMapConfig();
-        if (!mc.isBorderEnabled()) return;
-
-        org.bukkit.World world = gameWorld.getBukkitWorld();
-        if (world == null) return;
-
-        world.getWorldBorder().setCenter(mc.getBorderCenterX(), mc.getBorderCenterZ());
-        world.getWorldBorder().setSize(mc.getBorderSize());
     }
 
     /**
