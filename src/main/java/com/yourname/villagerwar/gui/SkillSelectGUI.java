@@ -8,16 +8,20 @@ import com.yourname.villagerwar.config.holder.SkillsConfig;
 import com.yourname.villagerwar.skill.GameSkill;
 import com.yourname.villagerwar.util.MessageUtil;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
 public class SkillSelectGUI {
+
+    private static final NamespacedKey SKILL_KEY = new NamespacedKey(VillagerWar.getInstance(), "skill_id");
 
     public static void open(Player player) {
         YamlConfiguration config = GUIUtils.loadConfig("skill_select");
@@ -29,7 +33,16 @@ public class SkillSelectGUI {
         Inventory inv = GUIUtils.createInventory(config, null);
         ConfigurationSection baseSection = config.getConfigurationSection("base");
 
-        // 构建基础布局
+        // 读取 symbol 配置（默认 0）
+        ConfigurationSection skillsSection = config.getConfigurationSection("skills");
+        String symbol = "0";
+        List<String> defaultClicks = new ArrayList<>();
+        if (skillsSection != null) {
+            symbol = skillsSection.getString("symbol", "0");
+            defaultClicks.addAll(skillsSection.getStringList("click"));
+        }
+
+        // 构建布局（跳过 symbol 位置，留空给技能）
         ConfigurationSection layoutSection = config.getConfigurationSection("layout");
         List<String> layoutLines = new ArrayList<>();
         if (layoutSection != null) {
@@ -42,15 +55,11 @@ public class SkillSelectGUI {
             for (int col = 0; col < line.length() && col < 9; col++) {
                 char c = line.charAt(col);
                 String key = String.valueOf(c);
-                if (key.equals("0")) continue;
+                if (key.equals("0") || key.equals(symbol)) continue;
 
                 int slot = row * 9 + col;
                 ItemStack item = null;
-
-                if (config.contains("skills." + key)) {
-                    item = buildSkillItem(config.getConfigurationSection("skills." + key));
-                }
-                if (item == null && config.contains(key)) {
+                if (config.contains(key)) {
                     item = GUIUtils.buildItem(config.getConfigurationSection(key));
                 }
                 if (item == null && baseSection != null && baseSection.contains(key)) {
@@ -60,19 +69,22 @@ public class SkillSelectGUI {
             }
         }
 
-        // 动态填充技能到空槽位
-        ConfigurationSection skillsSec = config.getConfigurationSection("skills");
-        if (skillsSec != null) {
-            int slot = 0;
-            for (String skillKey : skillsSec.getKeys(false)) {
-                ConfigurationSection skillSec = skillsSec.getConfigurationSection(skillKey);
-                if (skillSec == null) continue;
-                while (slot < inv.getSize() && inv.getItem(slot) != null) {
-                    slot++;
+        // 从 SkillsConfig 获取技能列表，顺序填入 symbol 位置
+        SkillsConfig skillsConfig = VillagerWar.getInstance().getConfigManager().getSkillsConfig();
+        List<SkillsConfig.SkillDef> skills = (skillsConfig != null) ? skillsConfig.getSkills() : new ArrayList<>();
+        if (!skills.isEmpty()) {
+            int skillIndex = 0;
+            for (int row = 0; row < layoutLines.size() && skillIndex < skills.size(); row++) {
+                String line = layoutLines.get(row);
+                for (int col = 0; col < line.length() && col < 9 && skillIndex < skills.size(); col++) {
+                    char c = line.charAt(col);
+                    String key = String.valueOf(c);
+                    if (!key.equals("0") && !key.equals(symbol)) continue;
+                    int slot = row * 9 + col;
+                    SkillsConfig.SkillDef skillDef = skills.get(skillIndex);
+                    inv.setItem(slot, buildSkillItem(skillDef, defaultClicks));
+                    skillIndex++;
                 }
-                if (slot >= inv.getSize()) break;
-                inv.setItem(slot, buildSkillItem(skillSec));
-                slot++;
             }
         }
 
@@ -80,24 +92,26 @@ public class SkillSelectGUI {
         GUIUtils.setOpenGUI(player.getName(), "skill_select");
     }
 
-    private static ItemStack buildSkillItem(ConfigurationSection section) {
-        if (section == null) return null;
-        String materialName = section.getString("material", "book");
-        Material material = Material.getMaterial(materialName.toUpperCase());
-        if (material == null) material = Material.BOOK;
-
+    private static ItemStack buildSkillItem(SkillsConfig.SkillDef skillDef, List<String> defaultClicks) {
+        Material material = skillDef.getMaterial();
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
 
-        String displayName = section.getString("display_name", "Skill");
-        if (!displayName.isEmpty()) meta.setDisplayName(MessageUtil.colorize(displayName));
+        meta.setDisplayName(MessageUtil.colorize("&e" + skillDef.getDisplayName()));
 
         List<String> lore = new ArrayList<>();
-        for (String line : section.getStringList("lore")) {
-            lore.add(MessageUtil.colorize(line));
+        lore.add(MessageUtil.colorize(" &7冷却: &f" + skillDef.getCooldown() + "秒"));
+        if (!skillDef.getMythicSkill().isEmpty()) {
+            lore.add(MessageUtil.colorize(" &7技能ID: &f" + skillDef.getMythicSkill()));
         }
+        lore.add("");
+        lore.add(MessageUtil.colorize("&e点击选择此技能"));
         meta.setLore(lore);
+
+        // 存储技能ID到物品
+        meta.getPersistentDataContainer().set(SKILL_KEY, PersistentDataType.STRING, skillDef.getId());
+
         item.setItemMeta(meta);
         return item;
     }
@@ -106,36 +120,56 @@ public class SkillSelectGUI {
         YamlConfiguration config = GUIUtils.loadConfig("skill_select");
         if (config == null) return;
 
+        // 读取 symbol 和默认 click
+        ConfigurationSection skillsSection = config.getConfigurationSection("skills");
+        String symbol = "0";
+        List<String> defaultClicks = new ArrayList<>();
+        if (skillsSection != null) {
+            symbol = skillsSection.getString("symbol", "0");
+            defaultClicks.addAll(skillsSection.getStringList("click"));
+        }
+
+        // 检查点击的槽位
         char c = GUIUtils.getSlotChar(config, slot);
         String key = String.valueOf(c);
-        if (key.equals("0")) return;
 
-        ConfigurationSection section = config.getConfigurationSection("skills." + key);
-        if (section == null) {
-            // 动态填充的技能没有layout字符映射，通过检查物品是否匹配技能配置
-            org.bukkit.inventory.ItemStack clicked = player.getOpenInventory().getItem(slot);
-            if (clicked == null || !clicked.hasItemMeta()) return;
-            String displayName = clicked.getItemMeta().getDisplayName();
-            ConfigurationSection skillsSec = config.getConfigurationSection("skills");
-            if (skillsSec != null) {
-                for (String skillKey : skillsSec.getKeys(false)) {
-                    ConfigurationSection sec = skillsSec.getConfigurationSection(skillKey);
-                    if (sec != null && MessageUtil.colorize(sec.getString("display_name", "")).equals(displayName)) {
-                        section = sec;
-                        break;
+        // 优先检查是否是技能物品（通过 PDC）
+        org.bukkit.inventory.InventoryView view = player.getOpenInventory();
+        if (view != null) {
+            ItemStack clicked = view.getItem(slot);
+            if (clicked != null && clicked.hasItemMeta()) {
+                String skillId = clicked.getItemMeta().getPersistentDataContainer()
+                    .get(SKILL_KEY, PersistentDataType.STRING);
+                if (skillId != null && !skillId.isEmpty()) {
+                    // 执行默认 click 效果（如音效）
+                    for (String action : defaultClicks) {
+                        action = action.trim();
+                        if (action.startsWith("sound:")) {
+                            String[] parts = action.substring(6).trim().split(" ");
+                            try {
+                                org.bukkit.Sound sound = org.bukkit.Sound.valueOf(parts[0]);
+                                float vol = parts.length > 1 ? Float.parseFloat(parts[1]) : 1f;
+                                float pit = parts.length > 2 ? Float.parseFloat(parts[2]) : 1f;
+                                player.playSound(player.getLocation(), sound, vol, pit);
+                            } catch (Exception ignored) {}
+                        }
                     }
+                    // 自动触发 select_skill
+                    handleSelectSkill(player, skillId);
+                    return;
                 }
             }
         }
-        if (section == null) {
-            // 尝试从base找
+
+        // 非技能物品，按普通 layout 处理（关闭、翻页等）
+        if (key.equals("0") || key.equals(symbol)) return;
+        ConfigurationSection section = config.getConfigurationSection(key);
+        if (section == null && config.contains("base." + key)) {
             section = config.getConfigurationSection("base." + key);
         }
         if (section == null) return;
 
         List<String> clicks = section.getStringList("click");
-        if (clicks.isEmpty()) return;
-
         for (String action : clicks) {
             action = action.trim();
             if (action.startsWith("sound:")) {
@@ -150,16 +184,11 @@ public class SkillSelectGUI {
                 player.closeInventory();
             } else if (action.startsWith("message:")) {
                 player.sendMessage(MessageUtil.colorize(action.substring(8).trim()));
-            } else if (action.equals("select_skill")) {
-                handleSelectSkill(player, section);
             }
         }
     }
 
-    private static void handleSelectSkill(Player player, ConfigurationSection section) {
-        String skillId = section.getString("skill", "");
-        if (skillId.isEmpty()) return;
-
+    private static void handleSelectSkill(Player player, String skillId) {
         VillagerWar plugin = VillagerWar.getInstance();
         java.util.Optional<Game> gameOpt = plugin.getGameManager().getGame(player);
         if (gameOpt.isEmpty()) return;
