@@ -86,9 +86,4 @@ teams:
 
 shops: defaults # 右键基地打开的商店模版
 
-# ─── 游戏区域边界（用于胜利判定、实体清理） ───
-bounds:
-  min_x: -50
-  max_x: 50
-  min_z: -50
-  max_z: 50
+# bounds 已移除
