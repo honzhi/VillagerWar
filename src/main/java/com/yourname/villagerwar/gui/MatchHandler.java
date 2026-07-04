@@ -69,14 +69,19 @@ public class MatchHandler {
 
         if (game.getPlayerCount() >= totalMinPlayers) {
             game.getController().start();
-            VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！10秒后开始游戏...");
+            com.yourname.villagerwar.config.holder.StatusConfig prepConfig =
+                VillagerWar.getInstance().getConfigManager().getStatusConfig("preparing");
+            int totalSec = (prepConfig != null) ? prepConfig.getDuration() : 10;
+        VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！" + totalSec + "秒后开始游戏...");
             for (GamePlayer gp : game.getPlayers()) {
                 Player p = gp.getPlayer();
                 if (p != null) {
                     p.sendTitle(MessageUtil.colorize("&a&l玩家人数已满"),
-                        MessageUtil.colorize("&710秒后游戏开始..."), 10, 60, 20);
+                        MessageUtil.colorize("&7" + totalSec + "秒后游戏开始..."), 10, 60, 20);
                 }
             }
+
+            int totalDelay = (prepConfig != null) ? prepConfig.getDuration() * 20 : 200;
 
             Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
                 Optional<Game> gameOpt = VillagerWar.getInstance().getGameManager().getGame(game.getGameId());
@@ -89,9 +94,9 @@ public class MatchHandler {
                     if (game.getState() != GameState.PREPARING) return;
                     VillagerWar.getInstance().getLogger().info("[Debug] 第二步：技能选择（等待所有玩家选择或超时）");
                     game.setState(GameState.SKILL_SELECT);
-                }, 100L);
+                }, 20L);  // PREPARING 分配队伍后等1秒进入技能选择
 
-            }, 200L);
+            }, totalDelay);
         } else {
             int need = totalMinPlayers - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要&c" + need + " &e人"));
