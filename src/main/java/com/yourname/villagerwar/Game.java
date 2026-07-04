@@ -7,7 +7,7 @@ import com.yourname.villagerwar.world.GameWorld;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.bukkit.entity.Player;
+
 import java.util.UUID;
 
 public class Game {
@@ -66,7 +66,24 @@ public class Game {
             VillagerWar.getInstance().getLogger().severe("[Debug] Failed to create world for " + mapId);
             return false;
         }
+        // 根据地图配置设置原版世界边界
+        applyWorldBorder();
         return true;
+    }
+
+    /**
+     * 根据地图配置设置原版世界边界
+     */
+    private void applyWorldBorder() {
+        if (gameWorld == null || gameWorld.getMapConfig() == null) return;
+        com.yourname.villagerwar.config.holder.MapConfig mc = gameWorld.getMapConfig();
+        if (!mc.isBorderEnabled()) return;
+
+        org.bukkit.World world = gameWorld.getBukkitWorld();
+        if (world == null) return;
+
+        world.getWorldBorder().setCenter(mc.getBorderCenterX(), mc.getBorderCenterZ());
+        world.getWorldBorder().setSize(mc.getBorderSize());
     }
 
     /**
@@ -99,33 +116,8 @@ public class Game {
         respawnManager.tick(gameTime);
         victoryManager.tick(gameTime);
 
-        // 边界检测：将超出边界的玩家推回
-        checkBounds();
     }
 
-    /**
-     * 检测所有玩家是否超出地图边界，超出则推回并提示
-     */
-    private void checkBounds() {
-        if (gameWorld == null || gameWorld.getMapConfig() == null) return;
-        com.yourname.villagerwar.config.holder.MapConfig mapConfig = gameWorld.getMapConfig();
-        if (!mapConfig.isBoundsEnabled()) return;
-
-        for (GamePlayer gp : players) {
-            Player p = gp.getPlayer();
-            if (p == null || !p.isOnline()) continue;
-            org.bukkit.Location loc = p.getLocation();
-            if (!mapConfig.isWithinBounds(loc)) {
-                // 计算边界内最近坐标
-                double x = Math.max(mapConfig.getBoundsMinX(), Math.min(mapConfig.getBoundsMaxX(), loc.getX()));
-                double z = Math.max(mapConfig.getBoundsMinZ(), Math.min(mapConfig.getBoundsMaxZ(), loc.getZ()));
-                loc.setX(x);
-                loc.setZ(z);
-                p.teleport(loc);
-                p.sendMessage("§c⚠ 你已超出战斗区域！");
-            }
-        }
-    }
 
     public void addPlayer(GamePlayer player) { players.add(player); }
     public void removePlayer(GamePlayer player) { players.remove(player); }

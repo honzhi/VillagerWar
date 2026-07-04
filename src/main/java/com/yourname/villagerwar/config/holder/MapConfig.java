@@ -59,80 +59,52 @@ public class MapConfig {
         return config.getString("shops", "defaults");
     }
 
-    private Double boundsMinX;
-    private Double boundsMaxX;
-    private Double boundsMinZ;
-    private Double boundsMaxZ;
-    private boolean boundsEnabled;
+    private double borderCenterX;
+    private double borderCenterZ;
+    private double borderSize;
+    private boolean borderEnabled;
 
     /**
-     * 初始化边界：从 points1/points2 两个角点计算矩形边界
+     * 初始化世界边界
+     * 配置格式：
+     *   bounds:
+     *     center: {x: 0, z: 0}    # 边界中心坐标
+     *     size: 100                # 边界直径（方块），不配置则无边限
      */
     private void initBounds() {
         ConfigurationSection boundsSection = config.getConfigurationSection("bounds");
-        if (boundsSection != null) {
-            ConfigurationSection p1 = boundsSection.getConfigurationSection("points1");
-            ConfigurationSection p2 = boundsSection.getConfigurationSection("points2");
-            if (p1 != null && p2 != null) {
-                double x1 = p1.getDouble("x", 0);
-                double z1 = p1.getDouble("z", 0);
-                double x2 = p2.getDouble("x", 0);
-                double z2 = p2.getDouble("z", 0);
-                this.boundsMinX = Math.min(x1, x2);
-                this.boundsMaxX = Math.max(x1, x2);
-                this.boundsMinZ = Math.min(z1, z2);
-                this.boundsMaxZ = Math.max(z1, z2);
-                this.boundsEnabled = true;
+        if (boundsSection != null && boundsSection.contains("center") && boundsSection.contains("size")) {
+            ConfigurationSection center = boundsSection.getConfigurationSection("center");
+            if (center != null) {
+                this.borderCenterX = center.getDouble("x", 0);
+                this.borderCenterZ = center.getDouble("z", 0);
+                this.borderSize = boundsSection.getDouble("size", 100);
+                this.borderEnabled = this.borderSize > 0;
                 return;
             }
         }
-        this.boundsMinX = null;
-        this.boundsMaxX = null;
-        this.boundsMinZ = null;
-        this.boundsMaxZ = null;
-        this.boundsEnabled = false;
+        this.borderEnabled = false;
     }
 
     /**
-     * 检查坐标是否在地图边界内
-     * @return true 在边界内或无边界配置，false 超出边界
+     * 世界边界是否已启用
      */
-    public boolean isWithinBounds(double x, double z) {
-        if (!boundsEnabled) return true;
-        return x >= boundsMinX && x <= boundsMaxX && z >= boundsMinZ && z <= boundsMaxZ;
-    }
+    public boolean isBorderEnabled() { return borderEnabled; }
 
     /**
-     * 检查坐标是否在地图边界内（Location 版本）
+     * 获取边界中心 X
      */
-    public boolean isWithinBounds(org.bukkit.Location loc) {
-        return isWithinBounds(loc.getX(), loc.getZ());
-    }
+    public double getBorderCenterX() { return borderCenterX; }
 
     /**
-     * 边界是否已启用（配置了两个角点）
+     * 获取边界中心 Z
      */
-    public boolean isBoundsEnabled() { return boundsEnabled; }
+    public double getBorderCenterZ() { return borderCenterZ; }
 
     /**
-     * 获取边界最小 X
+     * 获取边界直径
      */
-    public Double getBoundsMinX() { return boundsMinX; }
-
-    /**
-     * 获取边界最大 X
-     */
-    public Double getBoundsMaxX() { return boundsMaxX; }
-
-    /**
-     * 获取边界最小 Z
-     */
-    public Double getBoundsMinZ() { return boundsMinZ; }
-
-    /**
-     * 获取边界最大 Z
-     */
-    public Double getBoundsMaxZ() { return boundsMaxZ; }
+    public double getBorderSize() { return borderSize; }
 
     public String getDisplayName() { return displayName; }
     public File getFile() { return file; }
