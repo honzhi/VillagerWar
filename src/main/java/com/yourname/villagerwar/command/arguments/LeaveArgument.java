@@ -3,7 +3,7 @@ package com.yourname.villagerwar.command.arguments;
 import com.yourname.villagerwar.Game;
 import com.yourname.villagerwar.GameState;
 import com.yourname.villagerwar.VillagerWar;
-import com.yourname.villagerwar.gui.LobbyGUI;
+import com.yourname.villagerwar.gui.GUIUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +52,7 @@ public class LeaveArgument implements SubCommand {
                 return true;
             }
             // 在 PREPARING 阶段（等人中）→ 退出匹配
-            LobbyGUI.removePlayer(player.getName());
+            GUIUtils.removePlayer(player.getName());
             if (plugin.getInventoryManager().hasSnapshot(player)) {
                 plugin.getInventoryManager().clear(player);
                 plugin.getInventoryManager().restore(player);
@@ -63,7 +63,7 @@ public class LeaveArgument implements SubCommand {
         }
 
         // 不在任何游戏中→尝试清理队列残留
-        LobbyGUI.removePlayer(player.getName());
+        GUIUtils.removePlayer(player.getName());
         if (plugin.getInventoryManager().hasSnapshot(player)) {
             plugin.getInventoryManager().clear(player);
             plugin.getInventoryManager().restore(player);

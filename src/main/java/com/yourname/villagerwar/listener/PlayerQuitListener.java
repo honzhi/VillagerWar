@@ -2,7 +2,7 @@ package com.yourname.villagerwar.listener;
 
 import com.yourname.villagerwar.Game;
 import com.yourname.villagerwar.VillagerWar;
-import com.yourname.villagerwar.gui.LobbyGUI;
+import com.yourname.villagerwar.gui.GUIUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,7 +23,7 @@ public class PlayerQuitListener implements Listener {
         Player player = event.getPlayer();
 
         // 如果在匹配队列中 → 清理 + 归还背包
-        LobbyGUI.removePlayer(player.getName());
+        GUIUtils.removePlayer(player.getName());
 
         // 归还背包快照（队列和游戏中都有快照需要归还）
         if (plugin.getInventoryManager().hasSnapshot(player)) {

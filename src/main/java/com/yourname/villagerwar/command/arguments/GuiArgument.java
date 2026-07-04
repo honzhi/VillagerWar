@@ -1,7 +1,7 @@
 package com.yourname.villagerwar.command.arguments;
 
 import com.yourname.villagerwar.VillagerWar;
-import com.yourname.villagerwar.gui.LobbyGUI;
+import com.yourname.villagerwar.gui.MapSelectGUI;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -38,7 +38,7 @@ public class GuiArgument implements SubCommand {
             return true;
         }
         Player player = (Player) sender;
-        LobbyGUI.open(player, "map_select");
+        MapSelectGUI.open(player);
         return true;
     }
 

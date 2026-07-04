@@ -62,7 +62,7 @@ public class SkillManager {
         for (GamePlayer gp : game.getPlayers()) {
             org.bukkit.entity.Player player = gp.getPlayer();
             if (player != null && player.isOnline()) {
-                com.yourname.villagerwar.gui.LobbyGUI.open(player, "skill_select");
+                com.yourname.villagerwar.gui.SkillSelectGUI.open(player);
             }
         }
     }
