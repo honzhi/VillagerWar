@@ -247,6 +247,15 @@ public class GameWorld {
             return new Location(bukkitWorld, x, y, z, yaw, pitch);
         }
 
+        // 兼容写法: points: {x, y, z}
+        org.bukkit.configuration.ConfigurationSection pointsSection = spawnSection.getConfigurationSection("points");
+        if (pointsSection != null) {
+            double x = pointsSection.getDouble("x", 0);
+            double y = pointsSection.getDouble("y", 64);
+            double z = pointsSection.getDouble("z", 0);
+            return new Location(bukkitWorld, x, y, z, yaw, pitch);
+        }
+
         // 多点随机生成 points: [{x, y, z}, ...]
         List<?> points = spawnSection.getList("points");
         if (points != null && !points.isEmpty()) {
