@@ -117,14 +117,14 @@ public class Game {
             case ENDING:
                 // 结束展示时长到 → 进入奖励结算
                 if (stateTime / 20 >= getStatusDuration("ending")) {
-                    VillagerWar.getInstance().getLogger().info("[Debug] 结束展示结束，进入奖励结算");
+                    VillagerWar.getInstance().getLogger().info("[Debug]   → 结束展示结束，进入奖励结算");
                     setState(GameState.REWARD);
                 }
                 break;
             case REWARD:
                 // 奖励结算时长到 → 返回大厅
                 if (stateTime / 20 >= getStatusDuration("reward")) {
-                    VillagerWar.getInstance().getLogger().info("[Debug] 奖励结算结束，返回大厅");
+                    VillagerWar.getInstance().getLogger().info("[Debug]   → 奖励结算结束，返回大厅");
                     setState(GameState.RETURNING);
                 }
                 break;
