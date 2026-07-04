@@ -39,6 +39,9 @@ public class GameController {
     }
 
     public void onStateChange(GameState newState) {
+        // 应用状态UI配置（标题、记分板、操作栏）
+        game.getUiManager().applyStateUI(newState);
+
         switch (newState) {
             case PREPARING:
                 game.createGameWorld();

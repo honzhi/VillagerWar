@@ -24,7 +24,8 @@ public class ConfigManager {
     private MessagesConfig messagesConfig;
     private GameModesConfig gameModesConfig;
     private GameConfig gameConfig;
-
+    private final Map<String, StatusConfig> statusConfigs = new LinkedHashMap<>();
+    
     private final Map<String, ShopConfig> shopConfigs = new LinkedHashMap<>();
     private final Map<String, MapConfig> mapConfigs = new LinkedHashMap<>();
 
@@ -42,6 +43,7 @@ public class ConfigManager {
         loadGameConfig();
         loadShopConfigs();
         loadMapConfigs();
+        loadStatusConfigs();
         plugin.getLogger().info("All configs loaded (" + shopConfigs.size() + " shops, "
             + mapConfigs.size() + " maps)");
     }
@@ -59,8 +61,9 @@ public class ConfigManager {
         saveResource("game_modes.yml");
         saveResource("game_config.yml");
         saveResource("shop/defaults.yml");
-        saveResource("shop/武器商店.yml");
-        saveResource("shop/防具商店.yml");
+        saveResource("shop/weapon_shop.yml");
+        saveResource("shop/armor_shop.yml");
+        saveResource("game_status/preparing.yml");
         saveResource("game_status/skills_select.yml");
         saveResource("game_status/skill_show.yml");
         saveResource("game_status/playing.yml");
@@ -68,6 +71,7 @@ public class ConfigManager {
         saveResource("game_status/reward.yml");
         saveResource("game_gui/map_select.yml");
         saveResource("game_gui/mode_select.yml");
+        saveResource("game_gui/skill_select.yml");
         saveResource("map_defaults.yml");
         saveResource("inventory_presets.yml");
     }
@@ -202,4 +206,27 @@ public class ConfigManager {
 
     public MapConfig getMapConfig(String id) { return mapConfigs.get(id); }
     public Map<String, MapConfig> getMapConfigs() { return Collections.unmodifiableMap(mapConfigs); }
+
+    private void loadStatusConfigs() {
+        File statusDir = new File(dataFolder, "game_status");
+        if (!statusDir.isDirectory()) {
+            statusDir.mkdirs();
+            return;
+        }
+        File[] files = statusDir.listFiles((d, name) -> name.endsWith(".yml"));
+        if (files == null) return;
+        for (File file : files) {
+            try {
+                String stateName = file.getName().replace(".yml", "");
+                StatusConfig sc = new StatusConfig(file);
+                statusConfigs.put(stateName, sc);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to load status config: " + file.getName(), e);
+            }
+        }
+        plugin.getLogger().info("Loaded " + statusConfigs.size() + " status configs");
+    }
+
+    public StatusConfig getStatusConfig(String stateName) { return statusConfigs.get(stateName); }
+    public Map<String, StatusConfig> getStatusConfigs() { return Collections.unmodifiableMap(statusConfigs); }
 }

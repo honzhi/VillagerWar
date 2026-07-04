@@ -1,0 +1,103 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# 大厅 GUI：技能选择
+# 玩家在 SKILL_SELECT 状态下打开的界面
+# 点击技能图标选择该技能
+# ──────────────────────────────────────────────────────────────────────────────
+
+title: "&8┃ &6选择技能 &8┃"
+layout:
+  page1:
+    - "aaaaaaaaa"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "←aaaXaaa→"
+  page2:
+    - "aaaaaaaaa"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "a0000000a"
+    - "←aaaXaaa→"
+
+base:
+  a:
+    material: black_stained_glass_pane
+    display_name: " "
+    lore: []
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click: []
+
+  X:
+    material: barrier
+    display_name: "&c关闭"
+    lore:
+      - "&7点击关闭界面"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "close"
+
+  ←:
+    material: book
+    display_name: "&c上一页"
+    lore:
+      - "&7点击翻页"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "previous_page"
+
+  →:
+    material: book
+    display_name: "&c下一页"
+    lore:
+      - "&7点击翻页"
+    value: 0
+    conditions:
+      has_money: 0
+      game_time: 0
+      level: 0
+    click:
+      - "next_page"
+
+skills:
+  1:
+    material: book
+    display_name: "火球术"
+    skill: 火球术
+    lore:
+      - ""
+      - " &7释放火球攻击敌人"
+      - " &7冷却: &f100秒"
+      - " &7触发: &f右键"
+      - ""
+      - "&e点击选择此技能"
+    click:
+      - "sound: ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+      - "select_skill"
+  2:
+    material: book
+    display_name: "治疗术"
+    skill: 治疗术
+    lore:
+      - ""
+      - " &7恢复血量"
+      - " &7冷却: &f100秒"
+      - " &7触发: &f定时(1秒/次)"
+      - ""
+      - "&e点击选择此技能"
+    click:
+      - "sound: ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+      - "select_skill"

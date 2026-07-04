@@ -48,6 +48,9 @@ public class PlayerInteractListener implements Listener {
                 com.yourname.villagerwar.gui.LobbyGUI.removePlayer(player.getName());
                 player.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&',
                     "&7[&6村民战争&7] &e你已退出匹配队列"));
+            } else if (name.contains("选择技能")) {
+                // 打开技能选择 GUI
+                com.yourname.villagerwar.gui.LobbyGUI.open(player, "skill_select");
             } else if (name.contains("游戏信息")) {
                 player.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&',
                     "&7[&6村民战争&7] &e暂无游戏信息"));

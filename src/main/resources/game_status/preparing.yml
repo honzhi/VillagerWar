@@ -1,0 +1,57 @@
+preparing:
+  # ─── 匹配等待（在备战席等人） ───
+  # 此阶段没有时间限制，等人齐才结束
+  waiting:
+    title: "&7&l正在匹配..."
+    subtitle: "&e{current}&7/&e{max} &7人  等待更多玩家加入"
+    action_bar: "&a等待中... &f{current}&7/&e{max}  &7|  &c按书退出匹配"
+
+  # ─── 准备阶段持续时间 ───
+  # 人齐后立即开始计时，包含：匹配成功效果 → 分配队伍 → 倒计时
+  # 结束后进入技能选择阶段
+  duration: 10
+
+  # ─── 准备阶段标题 ───
+  title_hint:
+    title: "&a&l匹配成功"
+    subtitle: "&7正在分配队伍，&b{remain}秒后选择技能"
+
+  # ─── 操作栏（准备阶段） ───
+  actionBar: "&a准备中... &f{remain}秒后选择技能"
+
+  # ─── 计分板 ───
+  scoreboard:
+    enabled: true
+    title: "&6&l村民战争"
+    lines:
+      - "&7━━━━━━━━━━━━━━"
+      - " &f地图: &a{map}"
+      - " &f模式: &e{mode}"
+      - ""
+      - " &f队伍: &c{team_red} &7vs &9{team_blue}"
+      - " &f人数: &a{current}&7/&e{max}"
+      - ""
+      - " &f开始: &b{remain}秒"
+      - "&7━━━━━━━━━━━━━━"
+
+  # ─── 匹配成功效果（进入准备阶段时触发） ───
+  match_start:
+    sound: "ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+    title: "&a&l匹配成功"
+    subtitle: "&7正在进入游戏..."
+    broadcast: "&a{player} &7加入了游戏"
+
+  # ─── 倒计时效果 ───
+  countdown:
+    sound: "BLOCK_NOTE_BLOCK_PLING 1 1"
+    final_sound: "ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
+    final_title:
+      title: "&e{remain}"
+      subtitle: "&7游戏即将开始"
+
+  # ─── 玩家行为 ───
+  player:
+    freeze: true
+    clear_inventory: true
+    hunger_deplete: false
+    fall_damage: false

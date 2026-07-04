@@ -3,9 +3,10 @@ package com.yourname.villagerwar.gui;
 import com.yourname.villagerwar.Game;
 import com.yourname.villagerwar.GameState;
 
-import com.yourname.villagerwar.VillagerWar;import com.yourname.villagerwar.GamePlayer;
+import com.yourname.villagerwar.VillagerWar;
+import com.yourname.villagerwar.GamePlayer;
 import com.yourname.villagerwar.config.holder.MapConfig;
-import com.yourname.villagerwar.GamePlayer;import com.yourname.villagerwar.config.rule.GameRule;import com.yourname.villagerwar.GamePlayer;
+import com.yourname.villagerwar.config.rule.GameRule;
 import com.yourname.villagerwar.util.MessageUtil;
 import com.yourname.villagerwar.world.GameWorld;
 import org.bukkit.Bukkit;
@@ -311,8 +312,10 @@ public class LobbyGUI {
 
         // 检查是否满足开始条件（人齐了开始游戏）
         GameRule gameRule = game.getGameRule();
-        VillagerWar.getInstance().getLogger().info("[Debug] Players=" + game.getPlayerCount() + "/" + gameRule.getMinPlayers());
-                if (game.getPlayerCount() >= gameRule.getMinPlayers()) {
+        int teamCount = GamePlayer.Team.values().length;
+        int totalMinPlayers = gameRule.getMinPlayers() * teamCount;
+        VillagerWar.getInstance().getLogger().info("[Debug] Players=" + game.getPlayerCount() + "/" + totalMinPlayers + " (每队最低" + gameRule.getMinPlayers() + "人, 共" + teamCount + "队)");
+        if (game.getPlayerCount() >= totalMinPlayers) {
             VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！10秒后开始游戏...");
             // 通知所有玩家准备
             for (GamePlayer gp : game.getPlayers()) {
@@ -366,7 +369,8 @@ public class LobbyGUI {
                 }, 100L);  // 分配队伍后5s
 
             }, 200L);  // 总倒计时10s
-            int need = gameRule.getMinPlayers() - game.getPlayerCount();
+        } else {
+            int need = totalMinPlayers - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要 &c" + need + " &e人"));
         }
     }
@@ -379,4 +383,4 @@ public class LobbyGUI {
             queue.removeIf(p -> p.getName().equals(playerName));
         }
     }
-}// test
+}

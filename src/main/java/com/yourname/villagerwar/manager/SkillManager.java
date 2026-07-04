@@ -23,7 +23,13 @@ public class SkillManager {
      */
     public void openSkillSelectGUI() {
         if (game.getState() != GameState.SKILL_SELECT) return;
-        // TODO: 打开技能选择 GUI，让玩家从可用技能列表中选取一个
+        // 为每个在线玩家打开技能选择 GUI
+        for (GamePlayer gp : game.getPlayers()) {
+            org.bukkit.entity.Player player = gp.getPlayer();
+            if (player != null && player.isOnline()) {
+                com.yourname.villagerwar.gui.LobbyGUI.open(player, "skill_select");
+            }
+        }
     }
 
     /**

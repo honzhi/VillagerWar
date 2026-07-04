@@ -19,6 +19,7 @@ public class Game {
     private final String modeId;
     private String reservesSeatName;
     private int gameTime;
+    private int stateTime;
     private final List<GamePlayer> players;
 
     private final TeamManager teamManager;
@@ -41,6 +42,7 @@ public class Game {
         this.reservesSeatName = null;
         this.gameRule = gameRule;
         this.gameTime = 0;
+        this.stateTime = 0;
         this.players = new ArrayList<>();
 
         this.teamManager = new TeamManager(this);
@@ -78,17 +80,23 @@ public class Game {
 
     public void setState(GameState newState) {
         this.state = newState;
+        this.stateTime = 0;
         controller.onStateChange(newState);
     }
 
     public void tick() {
-        if (state != GameState.PLAYING) return;
         gameTime++;
+        stateTime++;
+
+        // 实时更新状态UI（计分板、标题、操作栏）
+        uiManager.tick(gameTime);
+
+        // 仅在游戏中执行游戏逻辑
+        if (state != GameState.PLAYING) return;
         spawnManager.tick(gameTime);
         economyManager.tick(gameTime);
         respawnManager.tick(gameTime);
         victoryManager.tick(gameTime);
-        uiManager.tick(gameTime);
     }
 
     public void addPlayer(GamePlayer player) { players.add(player); }
@@ -107,6 +115,8 @@ public class Game {
     public String getReservesSeatName() { return reservesSeatName; }
     public void setReservesSeatName(String name) { this.reservesSeatName = name; }
     public int getGameTime() { return gameTime; }
+    public int getStateTime() { return stateTime; }
+    public void resetStateTime() { this.stateTime = 0; }
     public List<GamePlayer> getPlayers() { return players; }
     public int getPlayerCount() { return players.size(); }
     public TeamManager getTeamManager() { return teamManager; }
