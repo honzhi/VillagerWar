@@ -93,18 +93,18 @@ public class MapArgument implements SubCommand {
             return true;
         }
 
-        // 查找地图模板世界文件夹（maps/<mapName>/ 下的第一个含 level.dat 的子目录）
+        // 查找 maps/<mapName>/ 下含 level.dat 的子文件夹
         File[] subDirs = mapDir.listFiles(File::isDirectory);
-        File worldFolder = null;
+        File templateFolder = null;
         if (subDirs != null) {
             for (File sub : subDirs) {
                 if (new File(sub, "level.dat").exists()) {
-                    worldFolder = sub;
+                    templateFolder = sub;
                     break;
                 }
             }
         }
-        if (worldFolder == null) {
+        if (templateFolder == null) {
             sender.sendMessage("§c地图 [" + mapName + "] 未放入地图文件（缺少 level.dat）");
             return true;
         }
@@ -112,25 +112,33 @@ public class MapArgument implements SubCommand {
         // 保存玩家当前位置
         previousLocations.put(player.getUniqueId(), player.getLocation());
 
-        // 卸载已有世界（如果已加载）
-        World existing = Bukkit.getWorld(worldFolder.getName());
+        // 目标世界名：template_<mapName>（保证不与其他世界冲突）
+        String targetWorldName = "template_" + mapName;
+
+        // 如果世界已加载，直接传送
+        World existing = Bukkit.getWorld(targetWorldName);
         if (existing != null) {
-            for (Player p : existing.getPlayers()) {
-                if (!p.equals(player)) {
-                    sender.sendMessage("§c该地图正在被其他玩家编辑");
-                    return true;
-                }
-            }
-            // 只有自己在里面，直接传送
             Location spawn = existing.getSpawnLocation();
             player.teleport(spawn);
             sender.sendMessage("§7[§6村民战争§7] §a已进入地图 §e[" + mapName + "] §a进行编辑");
             return true;
         }
 
+        // 复制模板到服务器根目录
+        File targetFolder = new File(Bukkit.getWorldContainer(), targetWorldName);
+        if (targetFolder.exists()) {
+            deleteFolder(targetFolder);
+        }
+        try {
+            copyFolder(templateFolder, targetFolder);
+        } catch (Exception e) {
+            sender.sendMessage("§c复制地图文件失败: " + e.getMessage());
+            return true;
+        }
+
         // 加载世界
         try {
-            World world = Bukkit.createWorld(new WorldCreator(worldFolder.getName()));
+            World world = Bukkit.createWorld(new WorldCreator(targetWorldName));
             if (world == null) {
                 sender.sendMessage("§c无法加载地图世界");
                 return true;
@@ -327,6 +335,25 @@ public class MapArgument implements SubCommand {
             }
         }
         folder.delete();
+    }
+
+    /**
+     * 复制文件夹（递归）
+     */
+    private void copyFolder(File source, File target) throws java.io.IOException {
+        if (source.isDirectory()) {
+            if (!target.exists() && !target.mkdirs()) {
+                throw new java.io.IOException("无法创建目录: " + target);
+            }
+            File[] children = source.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    copyFolder(child, new File(target, child.getName()));
+                }
+            }
+        } else {
+            java.nio.file.Files.copy(source.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private void sendHelp(CommandSender sender) {
