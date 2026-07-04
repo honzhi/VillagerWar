@@ -53,7 +53,7 @@ public class GameManager {
     public Game findOrCreateGame(String mapId, String modeId) {
         // 找已有的PREPARING游戏
         for (Game g : games.values()) {
-            if (g.getState() == GameState.PREPARING &&
+            if ((g.getState() == GameState.PREPARING || g.getState() == null) &&
                 g.getGameName().equals(mapId + "_" + modeId)) {
                 return g;
             }

@@ -60,6 +60,9 @@ public class MatchHandler {
         }
         MapSelectGUI.clearSelectedMap(player.getName());
 
+        // 显示正在匹配标题（等待更多人加入）
+        game.getUiManager().applyWaitingUI();
+
         player.sendMessage(MessageUtil.colorize("&a已加入游戏！当前人数: &e" + game.getPlayerCount()));
 
         GameRule gameRule = game.getGameRule();
