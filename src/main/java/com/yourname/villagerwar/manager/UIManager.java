@@ -148,7 +148,7 @@ public class UIManager {
             }
 
             // [READY] 鍊掕鏃堕煶鏁?鏍囬锛堟渶鍚?绉掞級
-            if (state == GameState.READY && game.getStateTime() % 20 == 0 && config.hasReady()) {
+            if (state == GameState.READY && game.getStateTime() % 20 == 1 && config.hasReady()) {
                 int remain = Math.max(0, 3 - game.getStateTime() / 20);
                 String rSound = remain <= 1 ? config.getReadyFinalSound() : config.getReadySound();
                 if (!rSound.isEmpty()) {
