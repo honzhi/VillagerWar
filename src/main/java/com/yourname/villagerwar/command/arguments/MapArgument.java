@@ -1,6 +1,10 @@
 package com.yourname.villagerwar.command.arguments;
 
 import com.yourname.villagerwar.VillagerWar;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -9,15 +13,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MapArgument implements SubCommand {
 
     private final VillagerWar plugin;
+    // 记录玩家进入地图前的原始位置
+    private static final Map<UUID, Location> previousLocations = new HashMap<>();
 
     public MapArgument(VillagerWar plugin) {
         this.plugin = plugin;
@@ -30,12 +33,12 @@ public class MapArgument implements SubCommand {
 
     @Override
     public String getDescription() {
-        return "地图管理：创建 / 列出 / 删除地图";
+        return "地图管理：创建 / 列出 / 删除 / 进入 / 离开";
     }
 
     @Override
     public String getUsage() {
-        return "/vw map <create|list|delete> [名称]";
+        return "/vw map <create|list|delete|join|leave> [名称]";
     }
 
     @Override
@@ -58,10 +61,109 @@ public class MapArgument implements SubCommand {
                 return handleList(sender);
             case "delete":
                 return handleDelete(sender, Arrays.copyOfRange(args, 1, args.length));
+            case "join":
+                return handleJoin(sender, Arrays.copyOfRange(args, 1, args.length));
+            case "leave":
+                return handleLeave(sender);
             default:
                 sendHelp(sender);
                 return true;
         }
+    }
+
+    // ========== join ==========
+
+    private boolean handleJoin(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("§c此命令仅限玩家执行");
+            return true;
+        }
+        if (args.length < 1) {
+            sender.sendMessage("§c用法: /vw map join <地图名称>");
+            return true;
+        }
+
+        Player player = (Player) sender;
+        String mapName = args[0].trim();
+
+        // 检查地图模板是否存在
+        File mapDir = new File(plugin.getDataFolder(), "maps/" + mapName);
+        if (!mapDir.exists()) {
+            sender.sendMessage("§c地图 [" + mapName + "] 不存在");
+            return true;
+        }
+
+        // 查找地图模板世界文件夹（maps/<mapName>/ 下的第一个含 level.dat 的子目录）
+        File[] subDirs = mapDir.listFiles(File::isDirectory);
+        File worldFolder = null;
+        if (subDirs != null) {
+            for (File sub : subDirs) {
+                if (new File(sub, "level.dat").exists()) {
+                    worldFolder = sub;
+                    break;
+                }
+            }
+        }
+        if (worldFolder == null) {
+            sender.sendMessage("§c地图 [" + mapName + "] 未放入地图文件（缺少 level.dat）");
+            return true;
+        }
+
+        // 保存玩家当前位置
+        previousLocations.put(player.getUniqueId(), player.getLocation());
+
+        // 卸载已有世界（如果已加载）
+        World existing = Bukkit.getWorld(worldFolder.getName());
+        if (existing != null) {
+            for (Player p : existing.getPlayers()) {
+                if (!p.equals(player)) {
+                    sender.sendMessage("§c该地图正在被其他玩家编辑");
+                    return true;
+                }
+            }
+            // 只有自己在里面，直接传送
+            Location spawn = existing.getSpawnLocation();
+            player.teleport(spawn);
+            sender.sendMessage("§7[§6村民战争§7] §a已进入地图 §e[" + mapName + "] §a进行编辑");
+            return true;
+        }
+
+        // 加载世界
+        try {
+            World world = Bukkit.createWorld(new WorldCreator(worldFolder.getName()));
+            if (world == null) {
+                sender.sendMessage("§c无法加载地图世界");
+                return true;
+            }
+            Location spawn = world.getSpawnLocation();
+            player.teleport(spawn);
+            sender.sendMessage("§7[§6村民战争§7] §a已进入地图 §e[" + mapName + "] §a进行编辑");
+            sender.sendMessage("§7使用 §e/vw map leave §7传送回原地");
+        } catch (Exception e) {
+            sender.sendMessage("§c加载地图世界失败: " + e.getMessage());
+        }
+        return true;
+    }
+
+    // ========== leave ==========
+
+    private boolean handleLeave(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("§c此命令仅限玩家执行");
+            return true;
+        }
+
+        Player player = (Player) sender;
+        Location prev = previousLocations.remove(player.getUniqueId());
+
+        if (prev == null) {
+            sender.sendMessage("§7[§6村民战争§7] §c你没有进入任何地图");
+            return true;
+        }
+
+        player.teleport(prev);
+        sender.sendMessage("§7[§6村民战争§7] §a已离开地图，传送回原地");
+        return true;
     }
 
     // ========== create ==========
@@ -74,7 +176,6 @@ public class MapArgument implements SubCommand {
 
         String mapName = args[0].trim();
 
-        // 校验名称是否包含非法字符
         if (mapName.contains("/") || mapName.contains("\\") || mapName.contains("..") || mapName.contains(":")) {
             sender.sendMessage("§c地图名称包含非法字符");
             return true;
@@ -86,23 +187,19 @@ public class MapArgument implements SubCommand {
             return true;
         }
 
-        // 创建文件夹
         if (!mapDir.mkdirs()) {
             sender.sendMessage("§c创建地图文件夹失败");
             return true;
         }
 
-        // 从 map_defaults.yml 复制 map.yml
         File targetFile = new File(mapDir, "map.yml");
         try {
-            // 先从 jar 中读取默认配置
             InputStream in = plugin.getResource("map_defaults.yml");
             if (in != null) {
                 byte[] buffer = new byte[in.available()];
                 in.read(buffer);
                 in.close();
 
-                // 替换显示名称为地图名称
                 String content = new String(buffer, "UTF-8");
                 content = content.replace("display_name: \"新地图\"", "display_name: \"" + mapName + "\"");
 
@@ -110,7 +207,6 @@ public class MapArgument implements SubCommand {
                 out.write(content.getBytes("UTF-8"));
                 out.close();
             } else {
-                // 如果 jar 中没有，尝试从数据文件夹读取
                 File defaultsFile = new File(plugin.getDataFolder(), "map_defaults.yml");
                 if (defaultsFile.exists()) {
                     java.nio.file.Files.copy(defaultsFile.toPath(), targetFile.toPath(),
@@ -126,7 +222,6 @@ public class MapArgument implements SubCommand {
             return true;
         }
 
-        // 刷新地图列表
         plugin.getConfigManager().refreshMapConfigs();
 
         sender.sendMessage("§7[§6村民战争§7] §a地图 §e[" + mapName + "] §a创建成功！");
@@ -183,7 +278,6 @@ public class MapArgument implements SubCommand {
 
         String mapName = args[0].trim();
 
-        // 校验名称
         if (mapName.contains("/") || mapName.contains("\\") || mapName.contains("..")) {
             sender.sendMessage("§c地图名称包含非法字符");
             return true;
@@ -195,17 +289,13 @@ public class MapArgument implements SubCommand {
             return true;
         }
 
-        // 确认删除
         if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
             sender.sendMessage("§c确定要删除地图 [" + mapName + "] 吗？所有文件将被删除");
             sender.sendMessage("§c使用 §e/vw map delete " + mapName + " confirm §c确认删除");
             return true;
         }
 
-        // 递归删除
         deleteFolder(mapDir);
-
-        // 刷新地图列表
         plugin.getConfigManager().refreshMapConfigs();
 
         sender.sendMessage("§7[§6村民战争§7] §a地图 §e[" + mapName + "] §a已删除");
@@ -214,9 +304,6 @@ public class MapArgument implements SubCommand {
 
     // ========== 工具方法 ==========
 
-    /**
-     * 检查地图文件夹中是否包含 level.dat（任意子文件夹均可）
-     */
     private boolean hasLevelDatFile(File mapDir) {
         File[] subDirs = mapDir.listFiles(File::isDirectory);
         if (subDirs == null) return false;
@@ -228,9 +315,6 @@ public class MapArgument implements SubCommand {
         return false;
     }
 
-    /**
-     * 递归删除文件夹
-     */
     private void deleteFolder(File folder) {
         File[] files = folder.listFiles();
         if (files != null) {
@@ -250,28 +334,33 @@ public class MapArgument implements SubCommand {
         sender.sendMessage("§e/vw map create <名称> §7- 创建新地图");
         sender.sendMessage("§e/vw map list §7- 列出所有地图");
         sender.sendMessage("§e/vw map delete <名称> §7- 删除地图");
+        sender.sendMessage("§e/vw map join <名称> §7- 进入地图进行编辑");
+        sender.sendMessage("§e/vw map leave §7- 离开地图传送回原地");
     }
 
     @Override
     public @Nullable List<String> tabComplete(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("villagerwar.admin")) return Collections.emptyList();
+
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
-            return Arrays.asList("create", "list", "delete").stream()
+            return Arrays.asList("create", "list", "delete", "join", "leave").stream()
                     .filter(a -> a.startsWith(partial))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("delete")) {
-            // 列出可用地图
-            File mapsDir = new File(plugin.getDataFolder(), "maps");
-            if (mapsDir.isDirectory()) {
-                File[] dirs = mapsDir.listFiles(File::isDirectory);
-                if (dirs != null) {
-                    String partial = args[1].toLowerCase();
-                    return Arrays.stream(dirs)
-                            .map(File::getName)
-                            .filter(n -> n.toLowerCase().startsWith(partial))
-                            .collect(Collectors.toList());
+        if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("delete") || args[0].equalsIgnoreCase("join")) {
+                File mapsDir = new File(plugin.getDataFolder(), "maps");
+                if (mapsDir.isDirectory()) {
+                    File[] dirs = mapsDir.listFiles(File::isDirectory);
+                    if (dirs != null) {
+                        String partial = args[1].toLowerCase();
+                        return Arrays.stream(dirs)
+                                .map(File::getName)
+                                .filter(n -> n.toLowerCase().startsWith(partial))
+                                .collect(Collectors.toList());
+                    }
                 }
             }
         }
