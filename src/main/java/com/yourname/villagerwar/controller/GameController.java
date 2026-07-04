@@ -71,7 +71,7 @@ public class GameController {
                 }
                 StatusConfig showConfig = VillagerWar.getInstance().getConfigManager().getStatusConfig("skill_show");
                 int showDuration = (showConfig != null) ? showConfig.getDuration() : 5;
-                // 技能展示后 → TELEPORT → 3s → READY → 3s → PLAYING
+                // 技能展示后 → TELEPORT → 1tick → READY(3s) → PLAYING
                 Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
                     if (game.getState() != GameState.SKILL_SHOW) return;
                     VillagerWar.getInstance().getLogger().info("[Debug] 第四步：传送至游戏地图");
@@ -88,7 +88,7 @@ public class GameController {
                             game.setState(GameState.PLAYING);
                         }, 60L);  // Ready 3s
 
-                    }, 60L);  // 传送后3s
+                    }, 1L);  // 传送后立即倒下个tick开始Ready倒计时
 
                 }, showDuration * 20L);  // 技能展示时间（配置）
                 break;
