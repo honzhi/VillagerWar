@@ -115,6 +115,7 @@ public class InventoryManager {
         private final int slot;
         private final int amount;
         private final String displayName;
+        private final String function;
         private final List<String> lore;
 
         PresetItem(Map<String, Object> map) {
@@ -123,6 +124,7 @@ public class InventoryManager {
             this.slot = toInt(map.getOrDefault("slot", -1));
             this.amount = toInt(map.getOrDefault("amount", 1));
             this.displayName = (String) map.getOrDefault("display_name", "");
+            this.function = (String) map.getOrDefault("function", "");
             Object loreObj = map.get("lore");
             if (loreObj instanceof List) {
                 this.lore = new ArrayList<>();

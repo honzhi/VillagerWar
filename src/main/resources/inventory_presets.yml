@@ -11,6 +11,7 @@ presets:
       slot: 8
       amount: 1
       display_name: "&c退出匹配"
+      function: "leave_match"       # 功能键名：退出匹配
       lore:
         - "&7右键点击退出匹配队列"
 
@@ -22,6 +23,7 @@ presets:
       slot: 0
       amount: 1
       display_name: "&a选择技能"
+      function: "select_skill"      # 功能键名：选择技能
       lore:
         - "&7点击打开技能选择界面"
 
@@ -33,5 +35,6 @@ presets:
       slot: 0
       amount: 1
       display_name: "&a技能已选择"
+      function: "show_skill"        # 功能键名：查看技能
       lore:
         - "&7等待游戏开始..."
