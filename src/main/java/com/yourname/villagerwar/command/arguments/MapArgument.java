@@ -121,7 +121,7 @@ public class MapArgument implements SubCommand {
         editingMaps.put(uuid, mapName);
 
         // 目标世界名
-        String targetWorldName = "template_" + mapName;
+        String targetWorldName = "map_editor";
 
         // 如果世界已加载，直接传送
         World existing = Bukkit.getWorld(targetWorldName);
@@ -199,7 +199,7 @@ public class MapArgument implements SubCommand {
         player.teleport(prev);
 
         // 卸载并删除世界
-        String targetWorldName = "template_" + mapName;
+        String targetWorldName = "map_editor";
         World world = Bukkit.getWorld(targetWorldName);
         if (world != null) {
             Bukkit.unloadWorld(world, false);
@@ -242,7 +242,7 @@ public class MapArgument implements SubCommand {
      * 执行保存：仅将地形数据（region/ + level.dat）从编辑世界同步到模板
      */
     private boolean doSave(String mapName, Player player) {
-        String targetWorldName = "template_" + mapName;
+        String targetWorldName = "map_editor";
         World world = Bukkit.getWorld(targetWorldName);
         if (world == null) {
             if (player != null) player.sendMessage("§c编辑世界未加载，无法保存");
