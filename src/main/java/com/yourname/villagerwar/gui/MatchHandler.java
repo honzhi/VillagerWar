@@ -10,7 +10,6 @@ import com.yourname.villagerwar.world.GameWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.Optional;
 
 public class MatchHandler {
 
@@ -71,35 +70,21 @@ public class MatchHandler {
         VillagerWar.getInstance().getLogger().info("[Debug] Players=" + game.getPlayerCount() + "/" + totalMinPlayers);
 
         if (game.getPlayerCount() >= totalMinPlayers) {
-            game.getController().start();
             com.yourname.villagerwar.config.holder.StatusConfig prepConfig =
                 VillagerWar.getInstance().getConfigManager().getStatusConfig("preparing");
             int totalSec = (prepConfig != null) ? prepConfig.getDuration() : 10;
-        VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！" + totalSec + "秒后开始游戏...");
+            VillagerWar.getInstance().getLogger().info("[Debug] 人齐了！开始 PREPARING 阶段（" + totalSec + "秒后进入技能选择）");
             for (GamePlayer gp : game.getPlayers()) {
                 Player p = gp.getPlayer();
                 if (p != null) {
                     p.sendTitle(MessageUtil.colorize("&a&l玩家人数已满"),
-                        MessageUtil.colorize("&7" + totalSec + "秒后游戏开始..."), 10, 60, 20);
+                        MessageUtil.colorize("&7准备开始游戏..."), 10, 60, 20);
                 }
             }
 
-            int totalDelay = (prepConfig != null) ? prepConfig.getDuration() * 20 : 200;
-
-            Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
-                Optional<Game> gameOpt = VillagerWar.getInstance().getGameManager().getGame(game.getGameId());
-                if (gameOpt.isEmpty()) return;
-
-                VillagerWar.getInstance().getLogger().info("[Debug] 第一步：分配队伍（备战席）");
-                game.setState(GameState.PREPARING);
-
-                Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
-                    if (game.getState() != GameState.PREPARING) return;
-                    VillagerWar.getInstance().getLogger().info("[Debug] 第二步：技能选择（等待所有玩家选择或超时）");
-                    game.setState(GameState.SKILL_SELECT);
-                }, 20L);  // PREPARING 分配队伍后等1秒进入技能选择
-
-            }, totalDelay);
+            game.getController().start();
+            game.setState(GameState.PREPARING);
+            VillagerWar.getInstance().getLogger().info("[Debug] 第一步：分配队伍（备战席）");
         } else {
             int need = totalMinPlayers - game.getPlayerCount();
             player.sendMessage(MessageUtil.colorize("&e等待更多玩家加入... 还需要&c" + need + " &e人"));

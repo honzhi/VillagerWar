@@ -1,4 +1,4 @@
-preparing:
+﻿preparing:
   # ─── 匹配等待（在备战席等人） ───
   # 此阶段没有时间限制，等人齐才结束
   waiting:
@@ -41,13 +41,6 @@ preparing:
     subtitle: "&7正在进入游戏..."
     broadcast: "&a{player} &7加入了游戏"
 
-  # ─── 倒计时效果 ───
-  countdown:
-    sound: "BLOCK_NOTE_BLOCK_PLING 1 1"
-    final_sound: "ENTITY_EXPERIENCE_ORB_PICKUP 1 1"
-    final_title:
-      title: "&e{remain}"
-      subtitle: "&7游戏即将开始"
 
   # ─── 玩家行为 ───
   player:

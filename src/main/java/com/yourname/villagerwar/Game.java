@@ -95,6 +95,16 @@ public class Game {
         if (state == null) return;
 
         switch (state) {
+            case PREPARING:
+                // duration 秒后自动进入技能选择
+                com.yourname.villagerwar.config.holder.StatusConfig prepTickConfig =
+                    VillagerWar.getInstance().getConfigManager().getStatusConfig("preparing");
+                int prepDuration = (prepTickConfig != null) ? prepTickConfig.getDuration() : 10;
+                if (stateTime / 20 >= prepDuration) {
+                    VillagerWar.getInstance().getLogger().info("[Debug] 第二步：技能选择（等待所有玩家选择或超时）");
+                    setState(GameState.SKILL_SELECT);
+                }
+                break;
             case PLAYING:
                 spawnManager.tick(gameTime);
                 economyManager.tick(gameTime);
