@@ -7,6 +7,7 @@ import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -21,6 +22,10 @@ public class MapArgument implements SubCommand {
     private final VillagerWar plugin;
     // 记录玩家进入地图前的原始位置
     private static final Map<UUID, Location> previousLocations = new HashMap<>();
+    // 记录玩家当前编辑的地图名称
+    private static final Map<UUID, String> editingMaps = new HashMap<>();
+    // 记录自动保存任务
+    private static final Map<UUID, BukkitTask> autoSaveTasks = new HashMap<>();
 
     public MapArgument(VillagerWar plugin) {
         this.plugin = plugin;
@@ -33,12 +38,12 @@ public class MapArgument implements SubCommand {
 
     @Override
     public String getDescription() {
-        return "地图管理：创建 / 列出 / 删除 / 进入 / 离开";
+        return "地图管理：创建 / 列出 / 删除 / 进入 / 离开 / 保存";
     }
 
     @Override
     public String getUsage() {
-        return "/vw map <create|list|delete|join|leave> [名称]";
+        return "/vw map <create|list|delete|join|leave|save> [名称]";
     }
 
     @Override
@@ -65,6 +70,8 @@ public class MapArgument implements SubCommand {
                 return handleJoin(sender, Arrays.copyOfRange(args, 1, args.length));
             case "leave":
                 return handleLeave(sender);
+            case "save":
+                return handleSave(sender);
             default:
                 sendHelp(sender);
                 return true;
@@ -84,6 +91,15 @@ public class MapArgument implements SubCommand {
         }
 
         Player player = (Player) sender;
+        UUID uuid = player.getUniqueId();
+
+        // 检查是否已在编辑地图
+        if (editingMaps.containsKey(uuid)) {
+            String currentMap = editingMaps.get(uuid);
+            sender.sendMessage("§c你正在编辑地图 §e[" + currentMap + "] §c，请先使用 §e/vw map leave §c离开");
+            return true;
+        }
+
         String mapName = args[0].trim();
 
         // 检查地图模板是否存在
@@ -94,33 +110,25 @@ public class MapArgument implements SubCommand {
         }
 
         // 查找 maps/<mapName>/ 下含 level.dat 的子文件夹
-        File[] subDirs = mapDir.listFiles(File::isDirectory);
-        File templateFolder = null;
-        if (subDirs != null) {
-            for (File sub : subDirs) {
-                if (new File(sub, "level.dat").exists()) {
-                    templateFolder = sub;
-                    break;
-                }
-            }
-        }
+        File templateFolder = findMapWorldFolder(mapDir);
         if (templateFolder == null) {
             sender.sendMessage("§c地图 [" + mapName + "] 未放入地图文件（缺少 level.dat）");
             return true;
         }
 
         // 保存玩家当前位置
-        previousLocations.put(player.getUniqueId(), player.getLocation());
+        previousLocations.put(uuid, player.getLocation());
+        editingMaps.put(uuid, mapName);
 
-        // 目标世界名：template_<mapName>（保证不与其他世界冲突）
+        // 目标世界名
         String targetWorldName = "template_" + mapName;
 
         // 如果世界已加载，直接传送
         World existing = Bukkit.getWorld(targetWorldName);
         if (existing != null) {
-            Location spawn = existing.getSpawnLocation();
-            player.teleport(spawn);
+            player.teleport(existing.getSpawnLocation());
             sender.sendMessage("§7[§6村民战争§7] §a已进入地图 §e[" + mapName + "] §a进行编辑");
+            startAutoSave(player, mapName);
             return true;
         }
 
@@ -132,6 +140,8 @@ public class MapArgument implements SubCommand {
         try {
             copyFolder(templateFolder, targetFolder);
         } catch (Exception e) {
+            editingMaps.remove(uuid);
+            previousLocations.remove(uuid);
             sender.sendMessage("§c复制地图文件失败: " + e.getMessage());
             return true;
         }
@@ -140,14 +150,19 @@ public class MapArgument implements SubCommand {
         try {
             World world = Bukkit.createWorld(new WorldCreator(targetWorldName));
             if (world == null) {
+                editingMaps.remove(uuid);
+                previousLocations.remove(uuid);
                 sender.sendMessage("§c无法加载地图世界");
                 return true;
             }
-            Location spawn = world.getSpawnLocation();
-            player.teleport(spawn);
+            player.teleport(world.getSpawnLocation());
             sender.sendMessage("§7[§6村民战争§7] §a已进入地图 §e[" + mapName + "] §a进行编辑");
             sender.sendMessage("§7使用 §e/vw map leave §7传送回原地");
+            sender.sendMessage("§7使用 §e/vw map save §7保存修改");
+            startAutoSave(player, mapName);
         } catch (Exception e) {
+            editingMaps.remove(uuid);
+            previousLocations.remove(uuid);
             sender.sendMessage("§c加载地图世界失败: " + e.getMessage());
         }
         return true;
@@ -162,16 +177,156 @@ public class MapArgument implements SubCommand {
         }
 
         Player player = (Player) sender;
-        Location prev = previousLocations.remove(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        String mapName = editingMaps.remove(uuid);
+        Location prev = previousLocations.remove(uuid);
 
-        if (prev == null) {
+        if (mapName == null || prev == null) {
             sender.sendMessage("§7[§6村民战争§7] §c你没有进入任何地图");
             return true;
         }
 
+        // 停止自动保存任务
+        cancelAutoSave(uuid);
+
+        // 自动保存
+        if (plugin.getConfigManager().getPluginConfig().isMapEditorAutoSave()) {
+            doSave(mapName, player);
+            player.sendMessage("§7[§6村民战争§7] §a已自动保存地图修改");
+        }
+
+        // 传送回原地
         player.teleport(prev);
+
+        // 卸载并删除世界
+        String targetWorldName = "template_" + mapName;
+        World world = Bukkit.getWorld(targetWorldName);
+        if (world != null) {
+            Bukkit.unloadWorld(world, false);
+            plugin.getLogger().info("已卸载编辑世界: " + targetWorldName);
+        }
+        File targetFolder = new File(Bukkit.getWorldContainer(), targetWorldName);
+        if (targetFolder.exists()) {
+            deleteFolder(targetFolder);
+            plugin.getLogger().info("已删除编辑世界文件夹: " + targetWorldName);
+        }
+
         sender.sendMessage("§7[§6村民战争§7] §a已离开地图，传送回原地");
         return true;
+    }
+
+    // ========== save ==========
+
+    private boolean handleSave(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("§c此命令仅限玩家执行");
+            return true;
+        }
+
+        Player player = (Player) sender;
+        UUID uuid = player.getUniqueId();
+        String mapName = editingMaps.get(uuid);
+
+        if (mapName == null) {
+            sender.sendMessage("§7[§6村民战争§7] §c你没有在编辑任何地图");
+            return true;
+        }
+
+        if (doSave(mapName, player)) {
+            sender.sendMessage("§7[§6村民战争§7] §a地图 §e[" + mapName + "] §a已保存");
+        }
+        return true;
+    }
+
+    /**
+     * 执行保存：仅将地形数据（region/ + level.dat）从编辑世界同步到模板
+     */
+    private boolean doSave(String mapName, Player player) {
+        String targetWorldName = "template_" + mapName;
+        World world = Bukkit.getWorld(targetWorldName);
+        if (world == null) {
+            if (player != null) player.sendMessage("§c编辑世界未加载，无法保存");
+            return false;
+        }
+
+        // 保存世界（确保区块落地）
+        world.save();
+
+        // 找到模板文件夹中的子文件夹
+        File mapDir = new File(plugin.getDataFolder(), "maps/" + mapName);
+        File templateFolder = findMapWorldFolder(mapDir);
+        if (templateFolder == null) {
+            if (player != null) player.sendMessage("§c找不到地图模板文件夹，无法保存");
+            return false;
+        }
+
+        File sourceFolder = new File(Bukkit.getWorldContainer(), targetWorldName);
+
+        try {
+            // 仅复制 region/（区块数据）和 level.dat（世界设置）
+            // 跳过 playerdata/、stats/、uid.dat、session.lock 等服务端特定文件
+            copyIfExists(sourceFolder, templateFolder, "region");
+            copyIfExists(sourceFolder, templateFolder, "level.dat");
+            plugin.getLogger().info("地图 " + mapName + " 地形数据已保存（region + level.dat）");
+            return true;
+        } catch (Exception e) {
+            if (player != null) player.sendMessage("§c保存地图失败: " + e.getMessage());
+            plugin.getLogger().warning("保存地图 " + mapName + " 失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 如果源文件/文件夹存在，则复制到目标
+     */
+    private void copyIfExists(File sourceDir, File targetDir, String name) throws java.io.IOException {
+        File src = new File(sourceDir, name);
+        if (!src.exists()) return;
+        File dst = new File(targetDir, name);
+        if (dst.exists()) {
+            deleteFolder(dst);
+        }
+        copyFolder(src, dst);
+    }
+
+    // ========== 自动保存 ==========
+
+    private void startAutoSave(Player player, String mapName) {
+        UUID uuid = player.getUniqueId();
+        cancelAutoSave(uuid);
+
+        if (!plugin.getConfigManager().getPluginConfig().isMapEditorAutoSave()) return;
+
+        int interval = plugin.getConfigManager().getPluginConfig().getMapEditorAutoSaveInterval();
+        // 转换为 tick（秒 * 20）
+        long intervalTicks = Math.max(interval * 20L, 100L); // 最少5秒
+
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            // 检查玩家是否还在编辑该地图
+            if (!editingMaps.containsKey(uuid) || !editingMaps.get(uuid).equals(mapName)) {
+                cancelAutoSave(uuid);
+                return;
+            }
+            // 检查玩家是否在线
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null || !p.isOnline()) {
+                cancelAutoSave(uuid);
+                return;
+            }
+
+            if (doSave(mapName, null)) {
+                p.sendActionBar("§a§l✔ 已自动保存修改");
+            }
+        }, intervalTicks, intervalTicks);
+
+        autoSaveTasks.put(uuid, task);
+    }
+
+    private void cancelAutoSave(UUID uuid) {
+        BukkitTask task = autoSaveTasks.remove(uuid);
+        if (task != null) {
+            task.cancel();
+        }
     }
 
     // ========== create ==========
@@ -297,6 +452,12 @@ public class MapArgument implements SubCommand {
             return true;
         }
 
+        // 检查是否正在被编辑
+        if (editingMaps.containsValue(mapName)) {
+            sender.sendMessage("§c地图 [" + mapName + "] 正在被编辑，无法删除");
+            return true;
+        }
+
         if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
             sender.sendMessage("§c确定要删除地图 [" + mapName + "] 吗？所有文件将被删除");
             sender.sendMessage("§c使用 §e/vw map delete " + mapName + " confirm §c确认删除");
@@ -312,6 +473,22 @@ public class MapArgument implements SubCommand {
 
     // ========== 工具方法 ==========
 
+    /**
+     * 在地图文件夹下找到含 level.dat 的子文件夹
+     */
+    private File findMapWorldFolder(File mapDir) {
+        if (!mapDir.isDirectory()) return null;
+        File[] subDirs = mapDir.listFiles(File::isDirectory);
+        if (subDirs != null) {
+            for (File subDir : subDirs) {
+                if (new File(subDir, "level.dat").exists()) {
+                    return subDir;
+                }
+            }
+        }
+        return null;
+    }
+
     private boolean hasLevelDatFile(File mapDir) {
         File[] subDirs = mapDir.listFiles(File::isDirectory);
         if (subDirs == null) return false;
@@ -323,6 +500,9 @@ public class MapArgument implements SubCommand {
         return false;
     }
 
+    /**
+     * 递归删除文件夹
+     */
     private void deleteFolder(File folder) {
         File[] files = folder.listFiles();
         if (files != null) {
@@ -335,6 +515,22 @@ public class MapArgument implements SubCommand {
             }
         }
         folder.delete();
+    }
+
+    /**
+     * 清空文件夹内容（保留文件夹本身）
+     */
+    private void deleteFolderContents(File folder) {
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteFolder(file);
+                } else {
+                    file.delete();
+                }
+            }
+        }
     }
 
     /**
@@ -362,7 +558,8 @@ public class MapArgument implements SubCommand {
         sender.sendMessage("§e/vw map list §7- 列出所有地图");
         sender.sendMessage("§e/vw map delete <名称> §7- 删除地图");
         sender.sendMessage("§e/vw map join <名称> §7- 进入地图进行编辑");
-        sender.sendMessage("§e/vw map leave §7- 离开地图传送回原地");
+        sender.sendMessage("§e/vw map leave §7- 离开地图（自动保存+传送回原地）");
+        sender.sendMessage("§e/vw map save §7- 手动保存地图修改");
     }
 
     @Override
@@ -371,7 +568,7 @@ public class MapArgument implements SubCommand {
 
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
-            return Arrays.asList("create", "list", "delete", "join", "leave").stream()
+            return Arrays.asList("create", "list", "delete", "join", "leave", "save").stream()
                     .filter(a -> a.startsWith(partial))
                     .collect(Collectors.toList());
         }

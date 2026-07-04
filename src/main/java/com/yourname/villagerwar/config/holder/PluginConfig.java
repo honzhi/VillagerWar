@@ -8,16 +8,23 @@ public class PluginConfig {
     private final String lobbyWorld;
     private final String defaultGameMode;
     private final String language;
-    private final boolean autoSave;
-    private final int autoSaveInterval;
+    private final boolean mapEditorAutoSave;
+    private final int mapEditorAutoSaveInterval;
     private final DatabaseConfig database;
 
     public PluginConfig(ConfigurationSection section) {
         this.lobbyWorld = section.getString("lobby-world", "world");
         this.defaultGameMode = section.getString("default-game-mode", "CLASSIC");
         this.language = section.getString("language", "zh_cn");
-        this.autoSave = section.getBoolean("auto-save", true);
-        this.autoSaveInterval = section.getInt("auto-save-interval", 300);
+        // 地图编辑器自动保存
+        ConfigurationSection mapEditor = section.getConfigurationSection("map_editor");
+        if (mapEditor != null) {
+            this.mapEditorAutoSave = mapEditor.getBoolean("auto_save", true);
+            this.mapEditorAutoSaveInterval = mapEditor.getInt("auto_save_interval", 300);
+        } else {
+            this.mapEditorAutoSave = true;
+            this.mapEditorAutoSaveInterval = 300;
+        }
         this.database = new DatabaseConfig(section.getConfigurationSection("database"));
         this.debug = section.getBoolean("debug", false);
     }
@@ -26,8 +33,8 @@ public class PluginConfig {
     public String getLobbyWorld() { return lobbyWorld; }
     public String getDefaultGameMode() { return defaultGameMode; }
     public String getLanguage() { return language; }
-    public boolean isAutoSave() { return autoSave; }
-    public int getAutoSaveInterval() { return autoSaveInterval; }
+    public boolean isMapEditorAutoSave() { return mapEditorAutoSave; }
+    public int getMapEditorAutoSaveInterval() { return mapEditorAutoSaveInterval; }
     public DatabaseConfig getDatabase() { return database; }
 
     public static class DatabaseConfig {

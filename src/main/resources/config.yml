@@ -38,4 +38,9 @@ reserves_seat:
     yaw: 0.0
     pitch: 0.0
 
+# ─── 地图编辑器设置 ───
+map_editor:
+  auto_save: true               # 是否启用自动保存
+  auto_save_interval: 300       # 自动保存间隔（秒）
+
 leave: "vanilla"  #等级设置 插件中所有需要的等级都以此为准 vanilla原版 
