@@ -4,6 +4,7 @@ import com.yourname.villagerwar.Game;
 import com.yourname.villagerwar.GamePlayer;
 import com.yourname.villagerwar.GameState;
 import com.yourname.villagerwar.VillagerWar;
+import com.yourname.villagerwar.config.holder.StatusConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
@@ -68,7 +69,9 @@ public class GameController {
                         VillagerWar.getInstance().getInventoryManager().apply(player, "after_skill_select");
                     }
                 }
-                // 技能展示3s后 → TELEPORT → 3s → READY → 3s → PLAYING
+                StatusConfig showConfig = VillagerWar.getInstance().getConfigManager().getStatusConfig("skill_show");
+                int showDuration = (showConfig != null) ? showConfig.getDuration() : 5;
+                // 技能展示后 → TELEPORT → 3s → READY → 3s → PLAYING
                 Bukkit.getScheduler().runTaskLater(VillagerWar.getInstance(), () -> {
                     if (game.getState() != GameState.SKILL_SHOW) return;
                     VillagerWar.getInstance().getLogger().info("[Debug] 第四步：传送至游戏地图");
@@ -87,7 +90,7 @@ public class GameController {
 
                     }, 60L);  // 传送后3s
 
-                }, 60L);  // 技能展示3s
+                }, showDuration * 20L);  // 技能展示时间（配置）
                 break;
             case TELEPORT:
                 // 传送至游戏地图，清空背包

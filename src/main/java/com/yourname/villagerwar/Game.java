@@ -38,7 +38,7 @@ public class Game {
         this.gameName = gameName;
         this.mapId = mapId;
         this.modeId = modeId;
-        this.state = GameState.PREPARING;
+        this.state = null; // 由第一个 setState 触发
         this.gameWorld = null;
         this.reservesSeatName = null;
         this.gameRule = gameRule;
@@ -91,6 +91,8 @@ public class Game {
 
         // 实时更新状态UI（计分板、标题、操作栏）
         uiManager.tick(gameTime);
+
+        if (state == null) return;
 
         switch (state) {
             case PLAYING:

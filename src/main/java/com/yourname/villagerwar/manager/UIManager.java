@@ -99,17 +99,6 @@ public class UIManager {
         // 计分板
         scoreboardManager.setupFromConfig(config);
 
-        // 标题
-        if (config.isTitleEnabled()) {
-            for (GamePlayer gp : game.getPlayers()) {
-                int stateSec = game.getStateTime() / 20;
-                String remain = String.valueOf(Math.max(0, config.getDuration() - stateSec));
-                String title = config.getTitleText().replace("{remain}", remain);
-                String subtitle = config.getSubtitleText().replace("{remain}", remain);
-                titleManager.sendTitle(gp, title, subtitle, 10, config.getDuration() * 20, 10);
-            }
-        }
-
         // 操作栏
         if (config.isActionBarEnabled()) {
             for (GamePlayer gp : game.getPlayers()) {
@@ -199,8 +188,8 @@ public class UIManager {
                     for (GamePlayer gp : game.getPlayers()) {
                         Player p = gp.getPlayer();
                         if (p != null) p.sendTitle(
-                            org.bukkit.ChatColor.translateAlternateColorCodes((char)38, title),
-                            org.bukkit.ChatColor.translateAlternateColorCodes((char)38, sub),
+                            org.bukkit.ChatColor.translateAlternateColorCodes('&', title),
+                            org.bukkit.ChatColor.translateAlternateColorCodes('&', sub),
                             0, 25, 5);
                     }
                 }
