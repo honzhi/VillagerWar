@@ -214,7 +214,11 @@ public class WorldManager {
         GameWorld seat = new GameWorld(templateName, plugin, bukkitWorld);
         reservesSeats.put(seatInstanceName, seat);
         return seat;
-    }public void deleteReservesSeat(String seatName) {
+    }    public GameWorld findReservesSeat(String seatName) {
+        return reservesSeats.get(seatName);
+    }
+
+    public void deleteReservesSeat(String seatName) {
         GameWorld seat = reservesSeats.remove(seatName);
         if (seat != null) {
             seat.unload();
