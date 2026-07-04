@@ -18,7 +18,3 @@ skills_select:
       - " &f剩余时间: &c{remain}"
       - " &f已选择: &a{ready_count}&7/&f{total_count}"
       - "&7━━━━━━━━━━━━━━"
-
-  skill_gui: #按照玩家已拥有的技能按照配置文件进行排列
-    title: "&6技能选择"
-    line: 6 #gui尺寸 单位 行
