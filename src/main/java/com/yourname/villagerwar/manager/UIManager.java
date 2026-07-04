@@ -160,41 +160,6 @@ public class UIManager {
                 }
             }
 
-            // [PREPARING] 倒计时音效
-            if (state == GameState.PREPARING && game.getStateTime() % 20 == 0) {
-                int remain = Math.max(0, config.getDuration() - game.getStateTime() / 20);
-                String countSound = "";
-                if (remain <= 3 && remain > 0 && !config.getCountdownFinalSound().isEmpty()) {
-                    countSound = config.getCountdownFinalSound();
-                } else if (remain > 0 && !config.getCountdownSound().isEmpty()) {
-                    countSound = config.getCountdownSound();
-                }
-                if (!countSound.isEmpty()) {
-                    try {
-                        String[] sParts = countSound.split(" ");
-                        Sound s = Sound.valueOf(sParts[0]);
-                        float vol = sParts.length > 1 ? Float.parseFloat(sParts[1]) : 1f;
-                        float pit = sParts.length > 2 ? Float.parseFloat(sParts[2]) : 1f;
-                        for (GamePlayer gp : game.getPlayers()) {
-                            Player p = gp.getPlayer();
-                            if (p != null) p.playSound(p.getLocation(), s, vol, pit);
-                        }
-                    } catch (Exception ignored) {}
-                }
-                // [PREPARING] 最后3秒大标题
-                if (remain <= 3 && remain > 0 && !config.getCountdownFinalTitle().isEmpty()) {
-                    String title = config.getCountdownFinalTitle().replace("{remain}", String.valueOf(remain));
-                    String sub = config.getCountdownFinalSubtitle().replace("{remain}", String.valueOf(remain));
-                    for (GamePlayer gp : game.getPlayers()) {
-                        Player p = gp.getPlayer();
-                        if (p != null) p.sendTitle(
-                            org.bukkit.ChatColor.translateAlternateColorCodes('&', title),
-                            org.bukkit.ChatColor.translateAlternateColorCodes('&', sub),
-                            0, 25, 5);
-                    }
-                }
-            }
-
             // 实时更新标题倒计时（仅对有标题且有余数的状态）
             if (config.isTitleEnabled() && game.getStateTime() % 20 == 0) {
                 int stateSec = game.getStateTime() / 20;
