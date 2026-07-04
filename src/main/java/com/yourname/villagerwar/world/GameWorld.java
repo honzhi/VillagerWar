@@ -238,26 +238,24 @@ public class GameWorld {
         float yaw = (float) spawnSection.getDouble("yaw", 0);
         float pitch = (float) spawnSection.getDouble("pitch", 0);
 
-        // 尝试从 points 列表获取
+        // 单点固定生成 point: {x, y, z}
+        org.bukkit.configuration.ConfigurationSection singlePoint = spawnSection.getConfigurationSection("point");
+        if (singlePoint != null) {
+            double x = singlePoint.getDouble("x", 0);
+            double y = singlePoint.getDouble("y", 64);
+            double z = singlePoint.getDouble("z", 0);
+            return new Location(bukkitWorld, x, y, z, yaw, pitch);
+        }
+
+        // 多点随机生成 points: [{x, y, z}, ...]
         List<?> points = spawnSection.getList("points");
         if (points != null && !points.isEmpty()) {
-            // 随机选择一个出生点
             int index = (int) (Math.random() * points.size());
             if (points.get(index) instanceof java.util.Map) {
                 @SuppressWarnings("unchecked")
                 java.util.Map<String, Object> point = (java.util.Map<String, Object>) points.get(index);
                 return locationFromMap(point, yaw, pitch);
             }
-        }
-
-        // 尝试 point1/point2 格式
-        org.bukkit.configuration.ConfigurationSection point1 = spawnSection.getConfigurationSection("point1");
-        org.bukkit.configuration.ConfigurationSection point2 = spawnSection.getConfigurationSection("point2");
-        if (point1 != null && point2 != null) {
-            double x = Math.random() < 0.5 ? point1.getDouble("x") : point2.getDouble("x");
-            double y = Math.random() < 0.5 ? point1.getDouble("y") : point2.getDouble("y");
-            double z = Math.random() < 0.5 ? point1.getDouble("z") : point2.getDouble("z");
-            return new Location(bukkitWorld, x, y, z, yaw, pitch);
         }
 
         return bukkitWorld.getSpawnLocation();
