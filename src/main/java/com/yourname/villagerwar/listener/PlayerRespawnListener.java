@@ -34,23 +34,19 @@ public class PlayerRespawnListener implements Listener {
         GamePlayer gp = game.getPlayer(player.getUniqueId());
         if (gp == null) return;
 
-        // 检查玩家是否在复活队列中（倒计时还未结束）
+        // 倒计时未结束 → 在游戏世界作为观察者重生
         if (game.getRespawnManager().isInQueue(gp)) {
-            // 倒计时未结束 → 在游戏世界作为观察者重生
             if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
                 event.setRespawnLocation(game.getGameWorld().getBukkitWorld().getSpawnLocation());
             }
-            // 下一tick设置为观察者模式并显示剩余时间
+            // 下一tick设置为观察者模式
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.setGameMode(GameMode.SPECTATOR);
-                // 计算剩余复活时间
-                int remain = game.getRespawnManager().getRemainingTime(gp);
-                player.sendTitle("", "§c复活倒计时: §e" + remain + "§c秒", 0, 30, 10);
             }, 1L);
             return;
         }
 
-        // 复活倒计时已结束 → 在队伍出生点以生存模式重生
+        // 倒计时已结束 → 在队伍出生点以生存模式重生
         if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
             Location spawnLoc = game.getGameWorld().getTeamSpawnLocation(gp.getTeam(), game);
             if (spawnLoc != null) {
@@ -58,7 +54,6 @@ public class PlayerRespawnListener implements Listener {
             } else {
                 event.setRespawnLocation(game.getGameWorld().getBukkitWorld().getSpawnLocation());
             }
-            // 下一tick设置为生存模式
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.setGameMode(GameMode.SURVIVAL);
                 player.setHealth(player.getMaxHealth());

@@ -64,7 +64,7 @@ public class PlayerDeathListener implements Listener {
         }
 
         // Respawn handling delegated to RespawnManager
-                game.getRespawnManager().addToRespawnQueue(gpVictim, game.getGameRule().getRespawnTime());
+                game.getRespawnManager().addToRespawnQueue(gpVictim, game.getGameRule().getRespawnTime() * 20);
 
         // Clear default death message (we handle it via UIManager)
         event.deathMessage(null);

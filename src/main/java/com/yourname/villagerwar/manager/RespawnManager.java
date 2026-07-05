@@ -40,10 +40,7 @@ public class RespawnManager {
 
         for (UUID uuid : ready) {
             respawnQueue.remove(uuid);
-            GamePlayer gp = game.getPlayer(uuid);
-            if (gp != null) {
-                respawnPlayer(gp);
-            }
+            // 不移除队列标记即可，PlayerRespawnEvent 会处理实际复活
         }
     }
 
