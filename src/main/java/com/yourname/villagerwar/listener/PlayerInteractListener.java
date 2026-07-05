@@ -31,16 +31,33 @@ public class PlayerInteractListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        if (item == null || !isBook(item.getType())) return;
+        if (item == null) return;
 
-        // 匹配队列中的物品交互（有快照但不在游戏中 = 排队/备战状态）
+        // 先检查是否是技能物品（任何材质都可以触发）
+        Optional<Game> gameOpt = plugin.getGameManager().getGame(player);
+        if (gameOpt.isPresent()) {
+            Game game = gameOpt.get();
+            GamePlayer gp = game.getPlayer(player.getUniqueId());
+
+            // 游戏中技能使用（PLAYING 状态）
+            if (game.getState() == com.yourname.villagerwar.GameState.PLAYING && gp != null && gp.getSkill() != null) {
+                if (com.yourname.villagerwar.util.MessageUtil.isSkillItem(item)) {
+                    event.setCancelled(true);
+                    game.getSkillManager().useSkill(gp);
+                    return;
+                }
+            }
+        }
+
+        // 仅书本类型物品的匹配/备战交互
+        if (!isBook(item.getType())) return;
+
         if (plugin.getInventoryManager().hasSnapshot(player)) {
             event.setCancelled(true);
             ItemMeta meta = item.getItemMeta();
             String name = (meta != null && meta.hasDisplayName()) ? meta.getDisplayName() : "";
 
             if (name.contains("退出匹配")) {
-                // 退出匹配 - 传送回原位并恢复背包
                 plugin.getInventoryManager().restoreLocation(player);
                 plugin.getInventoryManager().clear(player);
                 plugin.getInventoryManager().restore(player);
@@ -50,25 +67,11 @@ public class PlayerInteractListener implements Listener {
                 player.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&',
                     "&7[&6村民战争&7] &e你已退出匹配队列"));
             } else if (name.contains("选择技能")) {
-                // 打开技能选择 GUI
                 com.yourname.villagerwar.gui.SkillSelectGUI.open(player);
             } else if (name.contains("游戏信息")) {
                 player.sendMessage(org.bukkit.ChatColor.translateAlternateColorCodes('&',
                     "&7[&6村民战争&7] &e暂无游戏信息"));
             }
-            return;
-        }
-
-        // 游戏中技能使用
-        Optional<Game> gameOpt = plugin.getGameManager().getGame(player);
-        if (!gameOpt.isPresent()) return;
-        Game game = gameOpt.get();
-        GamePlayer gp = game.getPlayer(player.getUniqueId());
-        if (gp == null || gp.getSkill() == null) return;
-
-        // 使用 PDC 检测技能物品（支持物品类型变化后仍能触发）
-        if (com.yourname.villagerwar.util.MessageUtil.isSkillItem(item)) {
-            game.getSkillManager().useSkill(gp);
         }
     }
 

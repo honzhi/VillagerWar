@@ -46,6 +46,8 @@ public class PlayerRespawnListener implements Listener {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.setGameMode(GameMode.SPECTATOR);
             }, 1L);
+            // 重生后补发技能物品
+            com.yourname.villagerwar.util.MessageUtil.giveSkillItem(player, gp.getSkill());
             return;
         }
 
@@ -62,6 +64,8 @@ public class PlayerRespawnListener implements Listener {
                 player.setHealth(player.getMaxHealth());
                 player.setFoodLevel(20);
                 player.setFireTicks(0);
+                // 重生后补发技能物品
+                com.yourname.villagerwar.util.MessageUtil.giveSkillItem(player, gp.getSkill());
             }, 1L);
             return;
         }
