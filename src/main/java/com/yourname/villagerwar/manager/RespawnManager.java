@@ -28,7 +28,7 @@ public class RespawnManager {
      * 每 tick 检查复活队列中是否有到时的玩家。
      * @param gameTime 当前游戏刻数
      */
-    public void tick(int gameTime) {
+        public void tick(int gameTime) {
         if (game.getState() != GameState.PLAYING) return;
 
         List<UUID> ready = new ArrayList<>();
@@ -40,15 +40,39 @@ public class RespawnManager {
 
         for (UUID uuid : ready) {
             respawnQueue.remove(uuid);
-            // 不移除队列标记即可，PlayerRespawnEvent 会处理实际复活
+            GamePlayer gp = game.getPlayer(uuid);
+            if (gp != null) {
+                Player player = gp.getPlayer();
+                if (player != null && player.isOnline() && player.getGameMode() == GameMode.SPECTATOR) {
+                    // 倒计时已到，自动复活玩家
+                    Location spawnLoc = game.getGameWorld() != null ?
+                        game.getGameWorld().getTeamSpawnLocation(gp.getTeam(), game) : null;
+                    if (spawnLoc != null) {
+                        player.teleport(spawnLoc);
+                    } else if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
+                        player.teleport(game.getGameWorld().getBukkitWorld().getSpawnLocation());
+                    }
+                    player.setGameMode(GameMode.SURVIVAL);
+                    player.setHealth(player.getMaxHealth());
+                    player.setFoodLevel(20);
+                    player.setFireTicks(0);
+                    player.setFallDistance(0);
+                    player.resetTitle();
+                }
+            }
+        }
+
+        // 给观察者模式的玩家显示剩余复活时间
+        for (Map.Entry<UUID, Integer> entry : respawnQueue.entrySet()) {
+            GamePlayer gp = game.getPlayer(entry.getKey());
+            if (gp == null) continue;
+            Player p = gp.getPlayer();
+            if (p == null || !p.isOnline() || p.getGameMode() != GameMode.SPECTATOR) continue;
+            int remainTicks = entry.getValue() - gameTime;
+            int remainSec = Math.max(0, (remainTicks + 19) / 20);
+            p.sendActionBar("§c复活倒计时: §e" + remainSec + "§c秒");
         }
     }
-
-    /**
-     * 将玩家加入复活队列，delayTicks 后自动复活。
-     * @param player     要复活的玩家
-     * @param delayTicks 延迟刻数
-     */
     public void addToRespawnQueue(GamePlayer player, int delayTicks) {
         respawnQueue.put(player.getUuid(), game.getGameTime() + delayTicks);
     }
