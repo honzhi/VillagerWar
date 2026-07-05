@@ -31,9 +31,6 @@ public class RespawnManager {
         public void tick(int gameTime) {
         if (game.getState() != GameState.PLAYING) return;
 
-        if (respawnQueue.size() > 0) {
-            VillagerWar.getInstance().getLogger().info("[Debug] RespawnManager tick: queueSize=" + respawnQueue.size() + " gameTime=" + gameTime);
-        }
         List<UUID> ready = new ArrayList<>();
         for (Map.Entry<UUID, Integer> entry : respawnQueue.entrySet()) {
             if (gameTime >= entry.getValue()) {
