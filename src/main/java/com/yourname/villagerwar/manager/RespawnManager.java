@@ -31,9 +31,13 @@ public class RespawnManager {
         public void tick(int gameTime) {
         if (game.getState() != GameState.PLAYING) return;
 
+        if (respawnQueue.size() > 0) {
+            VillagerWar.getInstance().getLogger().info("[Debug] RespawnManager tick: queueSize=" + respawnQueue.size() + " gameTime=" + gameTime);
+        }
         List<UUID> ready = new ArrayList<>();
         for (Map.Entry<UUID, Integer> entry : respawnQueue.entrySet()) {
             if (gameTime >= entry.getValue()) {
+                VillagerWar.getInstance().getLogger().info("[Debug] RespawnManager: player " + entry.getKey().toString().substring(0,8) + " ready! expire=" + entry.getValue() + " gameTime=" + gameTime);
                 ready.add(entry.getKey());
             }
         }
@@ -43,6 +47,7 @@ public class RespawnManager {
             GamePlayer gp = game.getPlayer(uuid);
             if (gp != null) {
                 Player player = gp.getPlayer();
+                VillagerWar.getInstance().getLogger().info("[Debug] RespawnManager: auto-respawn check for " + uuid.toString().substring(0,8) + " online=" + (player != null && player.isOnline()) + " gamemode=" + (player != null ? player.getGameMode().name() : "null"));
                 if (player != null && player.isOnline() && player.getGameMode() == GameMode.SPECTATOR) {
                     // 倒计时已到，自动复活玩家
                     Location spawnLoc = game.getGameWorld() != null ?
