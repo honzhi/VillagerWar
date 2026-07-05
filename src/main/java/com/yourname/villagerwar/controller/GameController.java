@@ -109,6 +109,10 @@ public class GameController {
             case READY:
                 break;
             case PLAYING:
+                // 设置立即重生（跳过死亡界面）
+                if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
+                    game.getGameWorld().getBukkitWorld().setGameRule(org.bukkit.GameRule.DO_IMMEDIATE_RESPAWN, true);
+                }
                 break;
             case ENDING:
                 VillagerWar.getInstance().getLogger().info("[Debug] 第七步：进入结束展示阶段！");

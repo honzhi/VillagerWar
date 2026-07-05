@@ -44,23 +44,19 @@ public class RespawnManager {
             GamePlayer gp = game.getPlayer(uuid);
             if (gp != null) {
                 Player player = gp.getPlayer();
-                VillagerWar.getInstance().getLogger().info("[Debug] RespawnManager: auto-respawn check for " + uuid.toString().substring(0,8) + " online=" + (player != null && player.isOnline()) + " isDead=" + (player != null ? player.isDead() : "null") + " gamemode=" + (player != null ? player.getGameMode().name() : "null"));
-                if (player != null && player.isOnline() && (player.isDead() || player.getGameMode() == GameMode.SPECTATOR)) {
-                    // 倒计时已到，自动复活玩家
-                    Location spawnLoc = game.getGameWorld() != null ?
-                        game.getGameWorld().getTeamSpawnLocation(gp.getTeam(), game) : null;
-                    if (spawnLoc != null) {
-                        player.teleport(spawnLoc);
-                    } else if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
-                        player.teleport(game.getGameWorld().getBukkitWorld().getSpawnLocation());
-                    }
-                    player.setGameMode(GameMode.SURVIVAL);
-                    player.setHealth(player.getMaxHealth());
-                    player.setFoodLevel(20);
-                    player.setFireTicks(0);
-                    player.setFallDistance(0);
-                    player.resetTitle();
+                if (player == null || !player.isOnline()) continue;
+                Location spawnLoc = game.getGameWorld() != null ?
+                    game.getGameWorld().getTeamSpawnLocation(gp.getTeam(), game) : null;
+                if (spawnLoc == null && game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
+                    spawnLoc = game.getGameWorld().getBukkitWorld().getSpawnLocation();
                 }
+                if (spawnLoc != null) player.teleport(spawnLoc);
+                player.setGameMode(GameMode.SURVIVAL);
+                player.setHealth(player.getMaxHealth());
+                player.setFoodLevel(20);
+                player.setFireTicks(0);
+                player.setFallDistance(0);
+                player.resetTitle();
             }
         }
 
