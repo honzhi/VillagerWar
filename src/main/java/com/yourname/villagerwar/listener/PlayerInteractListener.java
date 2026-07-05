@@ -66,7 +66,8 @@ public class PlayerInteractListener implements Listener {
         GamePlayer gp = game.getPlayer(player.getUniqueId());
         if (gp == null || gp.getSkill() == null) return;
 
-        if (item.getType() == gp.getSkill().getIcon()) {
+        // 使用 PDC 检测技能物品（支持物品类型变化后仍能触发）
+        if (com.yourname.villagerwar.util.MessageUtil.isSkillItem(item)) {
             game.getSkillManager().useSkill(gp);
         }
     }

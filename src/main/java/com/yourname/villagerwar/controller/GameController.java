@@ -113,6 +113,12 @@ public class GameController {
                 if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
                     game.getGameWorld().getBukkitWorld().setGameRule(org.bukkit.GameRule.DO_IMMEDIATE_RESPAWN, true);
                 }
+                // 给每个玩家发放技能物品
+                for (GamePlayer gp : game.getPlayers()) {
+                    Player p = gp.getPlayer();
+                    if (p == null || !p.isOnline()) continue;
+                    com.yourname.villagerwar.util.MessageUtil.giveSkillItem(p, gp.getSkill());
+                }
                 break;
             case ENDING:
                 VillagerWar.getInstance().getLogger().info("[Debug] 第七步：进入结束展示阶段！");

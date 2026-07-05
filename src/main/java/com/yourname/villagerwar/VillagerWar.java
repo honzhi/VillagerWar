@@ -79,6 +79,7 @@ public class VillagerWar extends JavaPlugin {
         pm.registerEvents(new com.yourname.villagerwar.listener.PlayerMoveListener(this), this);
         pm.registerEvents(new com.yourname.villagerwar.listener.PlayerRespawnListener(this), this);
         pm.registerEvents(new com.yourname.villagerwar.listener.GUIListener(this), this);
+        pm.registerEvents(new com.yourname.villagerwar.listener.SkillItemListener(this), this);
     }
 
     public static VillagerWar getInstance() { return instance; }

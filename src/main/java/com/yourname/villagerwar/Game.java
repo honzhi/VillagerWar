@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import java.util.UUID;
+import org.bukkit.entity.Player;
 
 public class Game {
     private final UUID gameId;
@@ -107,6 +108,7 @@ public class Game {
                 break;
             case PLAYING:
                 spawnManager.tick(gameTime);
+                skillManager.tick();
                 economyManager.tick(gameTime);
                 respawnManager.tick(gameTime);
                 victoryManager.tick(gameTime);

@@ -265,4 +265,40 @@ public final class MMBridge {
         bukkitAdapterClass = null;
         init();
     }
+
+    /**
+     * 强制玩家释放一个 MythicMobs 技能（反射调用 SkillManager.castSkill）
+     * @param skillName 技能名称
+     * @param caster 释放者
+     * @return true=成功释放, false=失败
+     */
+    public static boolean castSkill(String skillName, org.bukkit.entity.Player caster) {
+        try {
+            Object skillManager = getSkillManager();
+            if (skillManager == null) return false;
+
+            Object adaptedCaster = adaptEntity(caster);
+            if (adaptedCaster == null) return false;
+
+            Method castMethod = null;
+            try {
+                castMethod = skillManager.getClass().getMethod("castSkill", String.class,
+                    Class.forName("io.lumine.mythic.api.adapters.AbstractEntity"));
+            } catch (NoSuchMethodException e) {
+                castMethod = skillManager.getClass().getMethod("castSkill", String.class,
+                    Class.forName("io.lumine.mythic.bukkit.adapters.BukkitEntity"));
+            }
+
+            if (castMethod == null) {
+                LOGGER.warning("[MMBridge] 未找到 castSkill 方法");
+                return false;
+            }
+
+            castMethod.invoke(skillManager, skillName, adaptedCaster);
+            return true;
+        } catch (Exception e) {
+            LOGGER.warning("[MMBridge] 释放技能失败: " + e.getMessage());
+            return false;
+        }
+    }
 }

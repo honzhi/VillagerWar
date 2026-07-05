@@ -24,12 +24,7 @@ public final class MessageUtil {
         throw new UnsupportedOperationException("工具类不允许实例化");
     }
 
-    /**
-     * 将 & 颜色代码转换为 Adventure API 的 Legacy 格式
-     * @param message 原始消息（含 &0-&f, &l, &m, &n, &o, &r）
-     * @return 转换后的字符串（含 § 颜色代码）
-     */
-    public static String colorize(String message) {
+public static String colorize(String message) {
         if (message == null || message.isEmpty()) return "";
         return message.replace('&', '§');
     }
@@ -211,4 +206,52 @@ public final class MessageUtil {
             return null;
         }
     }
+
+    /**
+     * 给玩家发放技能物品（固定槽位 8，不可移动）
+     */
+    public static void giveSkillItem(org.bukkit.entity.Player player, com.yourname.villagerwar.skill.GameSkill skill) {
+        if (player == null || skill == null) return;
+        if (skill.getModeKey().equalsIgnoreCase("timer") || skill.getModeKey().equalsIgnoreCase("attack") || skill.getModeKey().equalsIgnoreCase("damage") || skill.getModeKey().equalsIgnoreCase("always")) {
+            return; // 被动技能不发放物品
+        }
+        org.bukkit.inventory.ItemStack item = new org.bukkit.inventory.ItemStack(skill.getIcon());
+        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(org.bukkit.ChatColor.translateAlternateColorCodes('&', "&e" + skill.getDisplayName()));
+            java.util.List<String> lore = new java.util.ArrayList<>();
+            lore.add(org.bukkit.ChatColor.translateAlternateColorCodes('&', "&7右键释放技能"));
+            if (skill.getCooldown() > 0) {
+                lore.add(org.bukkit.ChatColor.translateAlternateColorCodes('&', "&7冷却: &f" + skill.getCooldown() + "秒"));
+            }
+            meta.setLore(lore);
+            // 标记为技能物品
+            meta.getPersistentDataContainer().set(
+                new org.bukkit.NamespacedKey(com.yourname.villagerwar.VillagerWar.getInstance(), "skill_item"),
+                org.bukkit.persistence.PersistentDataType.STRING, skill.getId());
+            item.setItemMeta(meta);
+        }
+        player.getInventory().setItem(8, item);
+    }
+
+    /**
+     * 检查物品是否为技能物品
+     */
+    public static boolean isSkillItem(org.bukkit.inventory.ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        return item.getItemMeta().getPersistentDataContainer().has(
+            new org.bukkit.NamespacedKey(com.yourname.villagerwar.VillagerWar.getInstance(), "skill_item"),
+            org.bukkit.persistence.PersistentDataType.STRING);
+    }
+
+    /**
+     * 获取技能物品的技能ID
+     */
+    public static String getSkillItemId(org.bukkit.inventory.ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return null;
+        return item.getItemMeta().getPersistentDataContainer().get(
+            new org.bukkit.NamespacedKey(com.yourname.villagerwar.VillagerWar.getInstance(), "skill_item"),
+            org.bukkit.persistence.PersistentDataType.STRING);
+    }
+
 }
