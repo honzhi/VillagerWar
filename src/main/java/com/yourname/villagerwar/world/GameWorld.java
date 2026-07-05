@@ -223,51 +223,57 @@ public class GameWorld {
      * 获取指定队伍的一个出生点位置
      */
     public Location getTeamSpawnLocation(GamePlayer.Team team, Game game) {
-        if (mapConfig == null) {
-            return bukkitWorld.getSpawnLocation();
-        }
-
         String teamId = team == GamePlayer.Team.RED ? "red" : "blue";
-        org.bukkit.configuration.ConfigurationSection teamSection = mapConfig.getTeamSection(teamId);
-        if (teamSection == null) return bukkitWorld.getSpawnLocation();
+        Location fallback = bukkitWorld.getSpawnLocation();
 
-        org.bukkit.configuration.ConfigurationSection spawnSection = teamSection.getConfigurationSection("player.spawn");
-        if (spawnSection == null) return bukkitWorld.getSpawnLocation();
-
-        // 获取 yaw/pitch
-        float yaw = (float) spawnSection.getDouble("yaw", 0);
-        float pitch = (float) spawnSection.getDouble("pitch", 0);
-
-        // 单点固定生成 point: {x, y, z}
-        org.bukkit.configuration.ConfigurationSection singlePoint = spawnSection.getConfigurationSection("point");
-        if (singlePoint != null) {
-            double x = singlePoint.getDouble("x", 0);
-            double y = singlePoint.getDouble("y", 64);
-            double z = singlePoint.getDouble("z", 0);
-            return new Location(bukkitWorld, x, y, z, yaw, pitch);
-        }
-
-        // 兼容写法: points: {x, y, z}
-        org.bukkit.configuration.ConfigurationSection pointsSection = spawnSection.getConfigurationSection("points");
-        if (pointsSection != null) {
-            double x = pointsSection.getDouble("x", 0);
-            double y = pointsSection.getDouble("y", 64);
-            double z = pointsSection.getDouble("z", 0);
-            return new Location(bukkitWorld, x, y, z, yaw, pitch);
-        }
-
-        // 多点随机生成 points: [{x, y, z}, ...]
-        List<?> points = spawnSection.getList("points");
-        if (points != null && !points.isEmpty()) {
-            int index = (int) (Math.random() * points.size());
-            if (points.get(index) instanceof java.util.Map) {
-                @SuppressWarnings("unchecked")
-                java.util.Map<String, Object> point = (java.util.Map<String, Object>) points.get(index);
-                return locationFromMap(point, yaw, pitch);
+        // 方案 A: 通过 ConfigurationSection 方式获取
+        if (mapConfig != null) {
+            org.bukkit.configuration.ConfigurationSection teamSection = mapConfig.getTeamSection(teamId);
+            if (teamSection != null) {
+                org.bukkit.configuration.ConfigurationSection spawnSection = teamSection.getConfigurationSection("player.spawn");
+                if (spawnSection != null) {
+                    float yaw = (float) spawnSection.getDouble("yaw", 0);
+                    float pitch = (float) spawnSection.getDouble("pitch", 0);
+                    org.bukkit.configuration.ConfigurationSection singlePoint = spawnSection.getConfigurationSection("point");
+                    if (singlePoint != null) {
+                        double x = singlePoint.getDouble("x", 0);
+                        double y = singlePoint.getDouble("y", 64);
+                        double z = singlePoint.getDouble("z", 0);
+                        plugin.getLogger().info("[Debug] getTeamSpawnLocation " + teamId + " via section point: " + x + "," + y + "," + z);
+                        return new Location(bukkitWorld, x, y, z, yaw, pitch);
+                    }
+                    org.bukkit.configuration.ConfigurationSection pointsSection = spawnSection.getConfigurationSection("points");
+                    if (pointsSection != null) {
+                        double x = pointsSection.getDouble("x", 0);
+                        double y = pointsSection.getDouble("y", 64);
+                        double z = pointsSection.getDouble("z", 0);
+                        plugin.getLogger().info("[Debug] getTeamSpawnLocation " + teamId + " via section points: " + x + "," + y + "," + z);
+                        return new Location(bukkitWorld, x, y, z, yaw, pitch);
+                    }
+                }
             }
         }
 
-        return bukkitWorld.getSpawnLocation();
+        // 方案 B: 通过 Map 方式获取（绕过 getList 返回 Map 的问题）
+        if (mapConfig != null) {
+            java.util.Map<String, Object> spawnPoint = mapConfig.getTeamSpawnPoint(teamId);
+            if (spawnPoint != null) {
+                double x = spawnPoint.get("x") instanceof Number ? ((Number) spawnPoint.get("x")).doubleValue() : 0;
+                double y = spawnPoint.get("y") instanceof Number ? ((Number) spawnPoint.get("y")).doubleValue() : 64;
+                double z = spawnPoint.get("z") instanceof Number ? ((Number) spawnPoint.get("z")).doubleValue() : 0;
+                float yaw = spawnPoint.get("_yaw") instanceof Number ? ((Number) spawnPoint.get("_yaw")).floatValue() : 0;
+                float pitch = spawnPoint.get("_pitch") instanceof Number ? ((Number) spawnPoint.get("_pitch")).floatValue() : 0;
+                plugin.getLogger().info("[Debug] getTeamSpawnLocation " + teamId + " via Map: " + x + "," + y + "," + z);
+                return new Location(bukkitWorld, x, y, z, yaw, pitch);
+            } else {
+                plugin.getLogger().warning("[Debug] getTeamSpawnLocation " + teamId + ": Map fallback returned null");
+            }
+        } else {
+            plugin.getLogger().warning("[Debug] getTeamSpawnLocation: mapConfig is null");
+        }
+
+        plugin.getLogger().info("[Debug] getTeamSpawnLocation " + teamId + " FALLBACK to world spawn");
+        return fallback;
     }
 
     /**
