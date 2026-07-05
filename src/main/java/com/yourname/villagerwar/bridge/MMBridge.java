@@ -274,30 +274,26 @@ public final class MMBridge {
      */
     public static boolean castSkill(String skillName, org.bukkit.entity.Player caster) {
         try {
-            Object skillManager = getSkillManager();
-            if (skillManager == null) return false;
+            if (!init()) return false;
 
-            Object adaptedCaster = adaptEntity(caster);
-            if (adaptedCaster == null) return false;
+            // MythicMobs Premium 5.11 API:
+            //   MythicBukkit.inst().getAPIHelper().castSkill(Entity caster, String skillName)
+            Class<?> mythicBukkitClass = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
+            Method instMethod = mythicBukkitClass.getMethod("inst");
+            Object mythicBukkit = instMethod.invoke(null);
+            Method getAPIHelper = mythicBukkitClass.getMethod("getAPIHelper");
+            Object apiHelper = getAPIHelper.invoke(mythicBukkit);
 
-            Method castMethod = null;
-            try {
-                castMethod = skillManager.getClass().getMethod("castSkill", String.class,
-                    Class.forName("io.lumine.mythic.api.adapters.AbstractEntity"));
-            } catch (NoSuchMethodException e) {
-                castMethod = skillManager.getClass().getMethod("castSkill", String.class,
-                    Class.forName("io.lumine.mythic.bukkit.adapters.BukkitEntity"));
+            // castSkill(Entity, String)
+            Method castMethod = apiHelper.getClass().getMethod("castSkill", org.bukkit.entity.Entity.class, String.class);
+            Object result = castMethod.invoke(apiHelper, caster, skillName);
+
+            if (result instanceof Boolean) {
+                return (Boolean) result;
             }
-
-            if (castMethod == null) {
-                LOGGER.warning("[MMBridge] 未找到 castSkill 方法");
-                return false;
-            }
-
-            castMethod.invoke(skillManager, skillName, adaptedCaster);
             return true;
         } catch (Exception e) {
-            LOGGER.warning("[MMBridge] 释放技能失败: " + e.getMessage());
+            LOGGER.warning("[MMBridge] 释放技能失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return false;
         }
     }
