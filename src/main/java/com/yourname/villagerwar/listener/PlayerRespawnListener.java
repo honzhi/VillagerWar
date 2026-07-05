@@ -34,12 +34,15 @@ public class PlayerRespawnListener implements Listener {
         GamePlayer gp = game.getPlayer(player.getUniqueId());
         if (gp == null) return;
 
-        // 倒计时未结束 → 在游戏世界作为观察者重生
+        // 倒计时未结束 → 在队伍出生点作为观察者重生
         if (game.getRespawnManager().isInQueue(gp)) {
-            if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
+            Location teamSpawn = game.getGameWorld() != null ?
+                game.getGameWorld().getTeamSpawnLocation(gp.getTeam(), game) : null;
+            if (teamSpawn != null) {
+                event.setRespawnLocation(teamSpawn);
+            } else if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
                 event.setRespawnLocation(game.getGameWorld().getBukkitWorld().getSpawnLocation());
             }
-            // 下一tick设置为观察者模式
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 player.setGameMode(GameMode.SPECTATOR);
             }, 1L);
