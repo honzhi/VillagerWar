@@ -133,71 +133,36 @@ public final class MMBridge {
      */
     public static Object spawnMob(String mobId, Location loc) {
         try {
-            Object mobManager = getMobManager();
-            if (mobManager == null) return null;
-
-            Method getMythicMob = mobManager.getClass().getMethod("getMythicMob", String.class);
-            Optional<?> mobOpt = (Optional<?>) getMythicMob.invoke(mobManager, mobId);
-            if (mobOpt.isEmpty()) {
-                LOGGER.warning("[MMBridge] MythicMobs 实体未找到: " + mobId);
-                return null;
-            }
-
-            Object mythicMob = mobOpt.get();
-            Object adaptedLoc = adaptLocation(loc);
-            if (adaptedLoc == null) {
-                LOGGER.warning("[MMBridge] 无法转换位置");
-                return null;
-            }
-
-            Method spawn = mythicMob.getClass().getMethod("spawn",
-                    Class.forName("io.lumine.mythic.api.adapters.AbstractLocation"), int.class);
-            return spawn.invoke(mythicMob, adaptedLoc, 1);
+            if (!init()) return null;
+            Class<?> mythicBukkitClass = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
+            Method instMethod = mythicBukkitClass.getMethod("inst");
+            Object mythicBukkit = instMethod.invoke(null);
+            Method getAPIHelper = mythicBukkitClass.getMethod("getAPIHelper");
+            Object apiHelper = getAPIHelper.invoke(mythicBukkit);
+            Method spawnMethod = apiHelper.getClass().getMethod("spawnMythicMob", String.class, Location.class);
+            return spawnMethod.invoke(apiHelper, mobId, loc);
         } catch (Exception e) {
-            LOGGER.warning("[MMBridge] 生成实体失败: " + e.getMessage());
+            LOGGER.warning("[MMBridge] 生成实体失败: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return null;
         }
     }
 
-    /**
-     * 生成 MythicMobs 实体（指定等级）
-     * @param mobId  MythicMobs 实体 ID
-     * @param loc    生成位置
-     * @param level  实体等级
-     * @return 生成的 ActiveMob 实例（Object），失败返回 null
-     */
     public static Object spawnMob(String mobId, Location loc, int level) {
         try {
-            Object mobManager = getMobManager();
-            if (mobManager == null) return null;
-
-            Method getMythicMob = mobManager.getClass().getMethod("getMythicMob", String.class);
-            Optional<?> mobOpt = (Optional<?>) getMythicMob.invoke(mobManager, mobId);
-            if (mobOpt.isEmpty()) {
-                LOGGER.warning("[MMBridge] MythicMobs 实体未找到: " + mobId);
-                return null;
-            }
-
-            Object mythicMob = mobOpt.get();
-            Object adaptedLoc = adaptLocation(loc);
-            if (adaptedLoc == null) {
-                LOGGER.warning("[MMBridge] 无法转换位置");
-                return null;
-            }
-
-            Method spawn = mythicMob.getClass().getMethod("spawn",
-                    Class.forName("io.lumine.mythic.api.adapters.AbstractLocation"), int.class);
-            return spawn.invoke(mythicMob, adaptedLoc, level);
+            if (!init()) return null;
+            Class<?> mythicBukkitClass = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
+            Method instMethod = mythicBukkitClass.getMethod("inst");
+            Object mythicBukkit = instMethod.invoke(null);
+            Method getAPIHelper = mythicBukkitClass.getMethod("getAPIHelper");
+            Object apiHelper = getAPIHelper.invoke(mythicBukkit);
+            Method spawnMethod = apiHelper.getClass().getMethod("spawnMythicMob", String.class, Location.class, int.class);
+            return spawnMethod.invoke(apiHelper, mobId, loc, level);
         } catch (Exception e) {
-            LOGGER.warning("[MMBridge] 生成实体失败: " + e.getMessage());
+            LOGGER.warning("[MMBridge] 生成实体失败(带等级): " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return null;
         }
     }
 
-    /**
-     * 移除 MythicMobs 实体
-     * @param uuid 实体 UUID
-     */
     public static void removeMob(UUID uuid) {
         try {
             Object mobManager = getMobManager();
