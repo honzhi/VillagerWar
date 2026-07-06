@@ -130,7 +130,7 @@ public class SpawnManager {
     }
 
     private void navigateMinions() {
-        for (Map.Entry<Entity, MinionData> entry : minions.entrySet()) {
+        for (java.util.Map.Entry<Entity, MinionData> entry : minions.entrySet()) {
             Entity e = entry.getKey();
             if (e.isDead() || !e.isValid()) {
                 continue;
@@ -139,24 +139,27 @@ public class SpawnManager {
             if (!(e instanceof Mob)) continue;
             Mob mob = (Mob) e;
 
+            // 如果正在战斗中（已有目标），不干扰 AI，让 MM 自己处理
+            if (mob.getTarget() != null && mob.getTarget().isValid()) {
+                continue;
+            }
+
             // 到达当前路径点？
             if (data.currentPathIndex < data.path.size()) {
                 Location target = data.path.get(data.currentPathIndex);
                 if (mob.getLocation().distance(target) < 2.0) {
-                    // 到达，切到下一个点
                     data.currentPathIndex++;
                 }
-                // 还没到，继续走向当前点
                 if (data.currentPathIndex < data.path.size()) {
                     Location next = data.path.get(data.currentPathIndex);
                     mob.getPathfinder().moveTo(next, 1.0);
                 }
             }
 
-            // 所有路径点走完 → 寻找敌方基地攻击
+            // 所有路径点走完 → 走向敌方基地
             if (data.currentPathIndex >= data.path.size()) {
                 Entity targetBase = findEnemyBase(data.team);
-                if (targetBase != null && targetBase.isValid()) {
+                if (targetBase != null && targetBase.isValid() && mob.getTarget() == null) {
                     mob.getPathfinder().moveTo(targetBase.getLocation(), 1.0);
                 }
             }
