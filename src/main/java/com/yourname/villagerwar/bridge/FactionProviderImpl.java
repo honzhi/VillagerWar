@@ -92,12 +92,27 @@ public class FactionProviderImpl {
         private String getFactionName(UUID uuid) {
             VillagerWar plugin = VillagerWar.getInstance();
             if (plugin == null) return null;
+
+            // 1. 检查玩家（GamePlayer）
             for (Game game : plugin.getGameManager().getGames()) {
                 GamePlayer gp = game.getPlayer(uuid);
                 if (gp != null && gp.getTeam() != null) {
                     return gp.getTeam() == GamePlayer.Team.RED ? "red_team" : "blue_team";
                 }
             }
+
+            // 2. 检查 MM 实体（基地/小兵）的 PDC 标记
+            org.bukkit.entity.Entity entity = org.bukkit.Bukkit.getEntity(uuid);
+            if (entity != null && entity.isValid()) {
+                String team = entity.getPersistentDataContainer().get(
+                    new org.bukkit.NamespacedKey(plugin, "vw_team"),
+                    org.bukkit.persistence.PersistentDataType.STRING
+                );
+                if (team != null) {
+                    return team.equalsIgnoreCase("RED") ? "red_team" : "blue_team";
+                }
+            }
+
             return null;
         }
     }
