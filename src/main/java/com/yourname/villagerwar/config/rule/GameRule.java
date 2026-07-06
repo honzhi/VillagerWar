@@ -25,6 +25,7 @@ public class GameRule {
     private final boolean friendlyFire;
     private final boolean allowSpectate;
     private final boolean autoBalance;
+    private final int waveInterval;
     private final String winCondition;
 
     public GameRule(String name, String displayName,
@@ -36,6 +37,7 @@ public class GameRule {
                     int killReward, int assistReward,
                     int maxTeamSize,
                     boolean friendlyFire, boolean allowSpectate, boolean autoBalance,
+                    int waveInterval,
                     String winCondition) {
         this.name = name;
         this.displayName = displayName;
@@ -56,6 +58,7 @@ public class GameRule {
         this.friendlyFire = friendlyFire;
         this.allowSpectate = allowSpectate;
         this.autoBalance = autoBalance;
+        this.waveInterval = waveInterval;
         this.winCondition = winCondition;
     }
 
@@ -78,5 +81,6 @@ public class GameRule {
     public boolean isFriendlyFire() { return friendlyFire; }
     public boolean isAllowSpectate() { return allowSpectate; }
     public boolean isAutoBalance() { return autoBalance; }
+    public int getWaveInterval() { return waveInterval; }
     public String getWinCondition() { return winCondition; }
 }

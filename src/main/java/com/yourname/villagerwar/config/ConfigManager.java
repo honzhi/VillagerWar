@@ -201,6 +201,7 @@ public class ConfigManager {
             10, 3,
             20,
             false, true, true,
+            200,
             "KILL_ALL");
     }
 

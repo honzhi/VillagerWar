@@ -272,6 +272,34 @@ public final class MMBridge {
      * @param caster 释放者
      * @return true=成功释放, false=失败
      */
+
+    /**
+     * 设置 MM 实体的阵营
+     * @param entity Bukkit 实体
+     * @param faction 阵营名
+     * @return true=成功
+     */
+    public static boolean setFaction(org.bukkit.entity.Entity entity, String faction) {
+        try {
+            if (!init()) return false;
+            Class<?> mythicBukkitClass = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
+            Method instMethod = mythicBukkitClass.getMethod("inst");
+            Object mythicBukkit = instMethod.invoke(null);
+            Method getAPIHelper = mythicBukkitClass.getMethod("getAPIHelper");
+            Object apiHelper = getAPIHelper.invoke(mythicBukkit);
+            Method getMythicMobInstance = apiHelper.getClass().getMethod("getMythicMobInstance", org.bukkit.entity.Entity.class);
+            Object mmInstance = getMythicMobInstance.invoke(apiHelper, entity);
+            if (mmInstance != null) {
+                Method setF = mmInstance.getClass().getMethod("setFaction", String.class);
+                setF.invoke(mmInstance, faction);
+                return true;
+            }
+        } catch (Exception e) {
+            LOGGER.warning("[MMBridge] 设置阵营失败: " + e.getMessage());
+        }
+        return false;
+    }
+
     public static boolean castSkill(String skillName, org.bukkit.entity.Player caster) {
         try {
             if (!init()) return false;

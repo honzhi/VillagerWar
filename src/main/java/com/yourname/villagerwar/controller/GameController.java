@@ -109,6 +109,8 @@ public class GameController {
             case READY:
                 break;
             case PLAYING:
+                // 生成双方基地
+                game.getSpawnManager().spawnBases();
                 // 设置立即重生（跳过死亡界面）
                 if (game.getGameWorld() != null && game.getGameWorld().getBukkitWorld() != null) {
                     game.getGameWorld().getBukkitWorld().setGameRule(org.bukkit.GameRule.DO_IMMEDIATE_RESPAWN, true);
@@ -137,6 +139,7 @@ public class GameController {
                         VillagerWar.getInstance().getInventoryManager().restore(player);
                     }
                 }
+                game.getSpawnManager().clearAll();
                 game.getGameWorld().returnToLobby(game);
                 game.destroyGameWorld();
                 break;

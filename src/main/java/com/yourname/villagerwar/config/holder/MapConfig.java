@@ -6,6 +6,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import org.bukkit.Location;
+import org.bukkit.World;
 
 /**
  * 单张地图的配置映射
@@ -117,4 +121,161 @@ public class MapConfig {
     public String getDisplayName() { return displayName; }
     public File getFile() { return file; }
     public YamlConfiguration getConfig() { return config; }
+
+    /**
+     * 获取指定队伍的基地配置
+     * @return {entity: {type, id}, spawn: {point, yaw, pitch}} 或 null
+     */
+    public Map<String, Object> getTeamBaseConfig(String teamId) {
+        List<?> teamsList = config.getList("teams");
+        if (teamsList == null) return null;
+        for (Object obj : teamsList) {
+            if (obj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> teamMap = (Map<String, Object>) obj;
+                if (teamId.equals(teamMap.get("id"))) {
+                    Object baseObj = teamMap.get("base");
+                    if (baseObj instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> baseMap = (Map<String, Object>) baseObj;
+                        return baseMap;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定队伍的小兵配置
+     * @return {entity: {type}, loop: [...], spawn: {point, yaw, pitch}, path: [...]} 或 null
+     */
+    public Map<String, Object> getTeamSoldierConfig(String teamId) {
+        List<?> teamsList = config.getList("teams");
+        if (teamsList == null) return null;
+        for (Object obj : teamsList) {
+            if (obj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> teamMap = (Map<String, Object>) obj;
+                if (teamId.equals(teamMap.get("id"))) {
+                    Object soldierObj = teamMap.get("soldier");
+                    if (soldierObj instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> soldierMap = (Map<String, Object>) soldierObj;
+                        return soldierMap;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定队伍的小兵路径点列表
+     * @return List of Location (不含世界)
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getTeamSoldierPath(String teamId) {
+        Map<String, Object> soldierConfig = getTeamSoldierConfig(teamId);
+        if (soldierConfig == null) return new ArrayList<>();
+        Object pathObj = soldierConfig.get("path");
+        if (pathObj instanceof List) {
+            return (List<Map<String, Object>>) pathObj;
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * 将路径点 Map 转换为 Location（使用指定的世界）
+     */
+    public static Location pathPointToLocation(Map<String, Object> point, World world) {
+        if (point == null) return null;
+        Number x = point.get("x") instanceof Number ? (Number) point.get("x") : null;
+        Number y = point.get("y") instanceof Number ? (Number) point.get("y") : null;
+        Number z = point.get("z") instanceof Number ? (Number) point.get("z") : null;
+        if (x == null || y == null || z == null) return null;
+        return new Location(world, x.doubleValue(), y.doubleValue(), z.doubleValue());
+    }
+
+    /**
+     * 从 spawn 配置 Map 中提取 Location
+     */
+    public static Location extractLocation(Map<String, Object> spawnMap, World world) {
+        if (spawnMap == null) return null;
+        Object pointsObj = spawnMap.containsKey("points") ? spawnMap.get("points") : spawnMap.get("point");
+        if (pointsObj == null) {
+            // 直接 x,y,z 在 spawnMap 层级
+            Number x = spawnMap.get("x") instanceof Number ? (Number) spawnMap.get("x") : null;
+            Number y = spawnMap.get("y") instanceof Number ? (Number) spawnMap.get("y") : null;
+            Number z = spawnMap.get("z") instanceof Number ? (Number) spawnMap.get("z") : null;
+            if (x != null && y != null && z != null) {
+                return new Location(world, x.doubleValue(), y.doubleValue(), z.doubleValue());
+            }
+            return null;
+        }
+        if (pointsObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> pt = (Map<String, Object>) pointsObj;
+            Number x = pt.get("x") instanceof Number ? (Number) pt.get("x") : null;
+            Number y = pt.get("y") instanceof Number ? (Number) pt.get("y") : null;
+            Number z = pt.get("z") instanceof Number ? (Number) pt.get("z") : null;
+            if (x != null && y != null && z != null) {
+                return new Location(world, x.doubleValue(), y.doubleValue(), z.doubleValue());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定队伍的 MM 基地实体 ID
+     */
+    public String getTeamBaseMobId(String teamId) {
+        Map<String, Object> baseConfig = getTeamBaseConfig(teamId);
+        if (baseConfig == null) return null;
+        Object entityObj = baseConfig.get("entity");
+        if (entityObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> entityMap = (Map<String, Object>) entityObj;
+            Object idObj = entityMap.get("id");
+            return idObj instanceof String ? (String) idObj : null;
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定队伍的小兵循环列表
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getTeamSoldierLoop(String teamId) {
+        Map<String, Object> soldierConfig = getTeamSoldierConfig(teamId);
+        if (soldierConfig == null) return new ArrayList<>();
+        Object loopObj = soldierConfig.get("loop");
+        if (loopObj instanceof List) {
+            return (List<String>) loopObj;
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * 获取小兵循环间隔（tick）
+     */
+    public int getSoldierLoopInterval(String teamId) {
+        Map<String, Object> soldierConfig = getTeamSoldierConfig(teamId);
+        if (soldierConfig == null) return 60;
+        Object val = soldierConfig.get("loop_interval");
+        if (val instanceof Number) return ((Number) val).intValue();
+        return 60;
+    }
+
+    /**
+     * 获取小兵第一波延迟（tick）
+     */
+    public int getSoldierDelay(String teamId) {
+        Map<String, Object> soldierConfig = getTeamSoldierConfig(teamId);
+        if (soldierConfig == null) return 60;
+        Object val = soldierConfig.get("delay");
+        if (val instanceof Number) return ((Number) val).intValue();
+        return 60;
+    }
+
 }

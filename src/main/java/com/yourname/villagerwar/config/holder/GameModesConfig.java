@@ -51,6 +51,7 @@ public class GameModesConfig {
         private boolean friendlyFire = false;
         private boolean allowSpectate = true;
         private boolean autoBalance = true;
+        private int waveInterval = 200;
         private String winCondition = "last_team_standing";
 
         public RulePreset(String name, ConfigurationSection section) {
@@ -74,6 +75,12 @@ public class GameModesConfig {
                 this.killReward = economySection.getInt("kill_reward", killReward);
                 this.assistReward = economySection.getInt("assist_reward", assistReward);
                 this.startGold = economySection.getInt("start_gold", startGold);
+            }
+
+            // 出兵间隔
+            ConfigurationSection spawnSection = section.getConfigurationSection("spawn");
+            if (spawnSection != null) {
+                this.waveInterval = spawnSection.getInt("wave_interval", waveInterval);
             }
 
             // 胜利条件
@@ -102,6 +109,7 @@ public class GameModesConfig {
         public boolean isFriendlyFire() { return friendlyFire; }
         public boolean isAllowSpectate() { return allowSpectate; }
         public boolean isAutoBalance() { return autoBalance; }
+        public int getWaveInterval() { return waveInterval; }
         public String getWinCondition() { return winCondition; }
     }
 }

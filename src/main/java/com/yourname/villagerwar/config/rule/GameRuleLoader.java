@@ -39,6 +39,7 @@ public final class GameRuleLoader {
             preset.isFriendlyFire(),
             preset.isAllowSpectate(),
             preset.isAutoBalance(),
+            preset.getWaveInterval(),
             preset.getWinCondition()
         );
     }

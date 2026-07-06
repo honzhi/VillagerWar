@@ -33,6 +33,7 @@ public class VillagerWar extends JavaPlugin {
 
         if (MMBridge.isMythicMobsLoaded()) {
             getLogger().info("[MMBridge] MythicMobs 插件已就绪");
+            com.yourname.villagerwar.bridge.FactionProviderImpl.register();
         } else {
             getLogger().info("[MMBridge] MythicMobs 插件未安装或未启用，技能/怪物功能不可用");
         }

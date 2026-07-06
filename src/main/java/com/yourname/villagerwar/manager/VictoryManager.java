@@ -38,6 +38,21 @@ public class VictoryManager {
         return null;
     }
 
+    public void declareWinner(GamePlayer.Team winner) {
+        com.yourname.villagerwar.VillagerWar.getInstance().getLogger().info("[胜利] " + winner + " 队获胜！");
+        for (GamePlayer gp : game.getPlayers()) {
+            org.bukkit.entity.Player p = gp.getPlayer();
+            if (p != null && p.isOnline()) {
+                p.sendTitle(
+                    org.bukkit.ChatColor.translateAlternateColorCodes('&', "&6" + winner + " 队胜利！"),
+                    org.bukkit.ChatColor.translateAlternateColorCodes('&', "&7恭喜获胜！"),
+                    10, 70, 20
+                );
+            }
+        }
+        game.setState(GameState.ENDING);
+    }
+
     public Game getGame() {
         return game;
     }
